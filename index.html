@@ -2453,6 +2453,31 @@ function mostrarEstadoBackupAuto() {
    14. INICIALIZACIÓN GENERAL DE LA APLICACIÓN
    ========================================================= */
 
+/**
+ * Rellena el formulario de liquidación con los datos extraídos del OCR.
+ * Los campos no detectados quedan vacíos para que el usuario los complete.
+ */
+function rellenarFormularioConOCR(datos) {
+  if (datos.fecha)   document.getElementById("liqFecha").value   = datos.fecha;
+  if (datos.recibo)  document.getElementById("liqRecibo").value  = datos.recibo;
+  if (datos.maquina) document.getElementById("liqMaquina").value = datos.maquina;
+  if (datos.importe) document.getElementById("liqImporte").value = datos.importe;
+
+  var faltantes = [];
+  if (!datos.fecha)   faltantes.push("fecha");
+  if (!datos.recibo)  faltantes.push("número de recibo");
+  if (!datos.maquina) faltantes.push("máquina");
+  if (!datos.importe) faltantes.push("importe");
+
+  if (faltantes.length === 0) {
+    mostrarToast("✅ Datos extraídos correctamente. Revisa y guarda.", "success");
+  } else {
+    mostrarToast("⚠️ No se detectó: " + faltantes.join(", ") + ". Complétalo a mano.", "error");
+  }
+
+  document.getElementById("formLiquidacion").scrollIntoView({ behavior: "smooth" });
+}
+
 /* =========================================================
    15. ESCÁNER DE TICKET CON CÁMARA (OCR.space - 100% gratuito)
    Gratuito hasta 25.000 fotos/mes sin tarjeta.

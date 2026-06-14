@@ -5,10 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#7a1f2b" />
   <title>Control de Recaudaciones y Liquidaciones - Liquidación</title>
-
-  <!-- PWA -->
-
-  <!-- Estilos -->
   <style>
 /* =========================================================
    ESTILOS GLOBALES - Control TUSSAM
@@ -540,71 +536,235 @@ tbody tr:hover {
   border: 1px solid var(--color-border);
 }
 
-  </style>
+/* =========================================================
+   MENÚ PRINCIPAL (PANTALLA DE INICIO CON BOTONES GRANDES)
+   ========================================================= */
 
+.menu-principal {
+  position: relative;
+  min-height: calc(100vh - 56px);
+  padding: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Marca de agua de fondo */
+.watermark {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-30deg);
+  font-size: clamp(3rem, 18vw, 9rem);
+  font-weight: 900;
+  color: var(--color-primary);
+  opacity: 0.06;
+  pointer-events: none;
+  white-space: nowrap;
+  letter-spacing: 0.05em;
+  z-index: 0;
+  user-select: none;
+}
+
+/* Resumen de totales en la parte superior del menú */
+.menu-resumen {
+  display: flex;
+  gap: 10px;
+  z-index: 1;
+}
+
+.resumen-item {
+  flex: 1;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 12px 8px;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.resumen-label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 4px;
+}
+
+.resumen-valor {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+/* Saldo con colores dinámicos */
+#cardSaldo.positivo {
+  background-color: var(--color-danger-bg);
+  border-color: var(--color-danger);
+}
+#cardSaldo.positivo .resumen-valor {
+  color: var(--color-danger);
+}
+#cardSaldo.cero {
+  background-color: var(--color-success-bg);
+  border-color: var(--color-success);
+}
+#cardSaldo.cero .resumen-valor {
+  color: var(--color-success);
+}
+
+/* Cuadrícula de botones del menú */
+.menu-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  z-index: 1;
+}
+
+.menu-btn {
+  background-color: var(--color-surface);
+  border: 2px solid var(--color-border);
+  border-radius: 16px;
+  padding: 24px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: transform 0.12s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.menu-btn:active {
+  transform: scale(0.96);
+}
+
+.menu-btn:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 4px 14px rgba(122, 31, 43, 0.15);
+}
+
+.menu-icon {
+  font-size: 2.2rem;
+  line-height: 1;
+}
+
+.menu-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-text);
+  text-align: center;
+  line-height: 1.2;
+}
+
+/* Botón volver en la cabecera */
+.volver-btn {
+  font-size: 1.3rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  margin-right: 4px;
+}
+
+/* En secciones, el contenido ocupa toda la pantalla */
+#contenidoSecciones .tab-content {
+  padding-bottom: 24px;
+}
+
+/* Quitar el margen superior del h2 en secciones ya que la cabecera lo indica */
+#contenidoSecciones h2 {
+  margin-top: 8px;
+  margin-bottom: 14px;
+  color: var(--color-primary);
+  border-bottom: 2px solid var(--color-primary);
+  padding-bottom: 8px;
+}
+
+@media (min-width: 600px) {
+  .menu-grid {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+  .menu-btn {
+    padding: 28px 16px;
+  }
+}
+
+  </style>
 </head>
 <body>
 
   <!-- ===================== CABECERA ===================== -->
   <header class="app-header">
     <div class="header-left">
-      <span class="material-icon">🚌</span>
-      <h1>Control Liquidación</h1>
+      <button id="btnVolver" class="icon-btn volver-btn" style="display:none;" aria-label="Volver al menú">←</button>
+      <span class="material-icon" id="headerIcon">🚌</span>
+      <h1 id="headerTitle">Control Liquidación</h1>
     </div>
     <div class="header-right">
-      <button id="btnTheme" class="icon-btn" title="Cambiar tema" aria-label="Cambiar tema claro/oscuro">🌙</button>
+      <button id="btnTheme" class="icon-btn" title="Cambiar tema" aria-label="Cambiar tema">🌙</button>
     </div>
   </header>
 
-  <!-- ===================== NAVEGACIÓN (TABS) ===================== -->
-  <nav class="tabs" id="tabs">
-    <button class="tab-btn active" data-tab="inicio">🏠 Inicio</button>
-    <button class="tab-btn" data-tab="recaudaciones">💰 Recaudaciones</button>
-    <button class="tab-btn" data-tab="liquidaciones">🧾 Liquidaciones</button>
-    <button class="tab-btn" data-tab="importar">📥 Importar Correo</button>
-    <button class="tab-btn" data-tab="estadillo">🪙 Estadillo</button>
-    <button class="tab-btn" data-tab="historial">📜 Historial</button>
-    <button class="tab-btn" data-tab="backup">💾 Copias de Seguridad</button>
-  </nav>
+  <!-- ===================== PANTALLA: MENÚ PRINCIPAL ===================== -->
+  <div id="menuPrincipal" class="menu-principal">
 
-  <main class="container">
+    <!-- Marca de agua de fondo -->
+    <div class="watermark">LIQUIDACIÓN</div>
 
-    <!-- ===================== PANTALLA: INICIO ===================== -->
-    <section id="tab-inicio" class="tab-content active">
-      <h2>Resumen General</h2>
-
-      <div class="cards">
-        <div class="card">
-          <div class="card-title">Total Recaudado</div>
-          <div class="card-value" id="totalRecaudado">0,00 €</div>
-        </div>
-
-        <div class="card">
-          <div class="card-title">Total Liquidado</div>
-          <div class="card-value" id="totalLiquidado">0,00 €</div>
-        </div>
-
-        <div class="card" id="cardSaldo">
-          <div class="card-title">Saldo Pendiente</div>
-          <div class="card-value" id="saldoPendiente">0,00 €</div>
-        </div>
+    <!-- Tarjetas resumen encima del menú -->
+    <div class="menu-resumen">
+      <div class="resumen-item">
+        <span class="resumen-label">Recaudado</span>
+        <span class="resumen-valor" id="totalRecaudado">0,00 €</span>
       </div>
-
-      <div class="info-box">
-        <p><strong>Fórmula:</strong> Saldo Pendiente = Total Recaudado − Total Liquidado</p>
-        <p>🔴 Rojo: existe saldo pendiente (Recaudado &gt; Liquidado)</p>
-        <p>🟢 Verde: saldo en cero (todo liquidado)</p>
+      <div class="resumen-item resumen-saldo" id="cardSaldo">
+        <span class="resumen-label">Saldo</span>
+        <span class="resumen-valor" id="saldoPendiente">0,00 €</span>
       </div>
-    </section>
+      <div class="resumen-item">
+        <span class="resumen-label">Liquidado</span>
+        <span class="resumen-valor" id="totalLiquidado">0,00 €</span>
+      </div>
+    </div>
 
-    <!-- ===================== PANTALLA: RECAUDACIONES ===================== -->
+    <!-- Botones del menú -->
+    <div class="menu-grid">
+      <button class="menu-btn" data-tab="recaudaciones">
+        <span class="menu-icon">💰</span>
+        <span class="menu-label">Recaudaciones</span>
+      </button>
+      <button class="menu-btn" data-tab="liquidaciones">
+        <span class="menu-icon">🧾</span>
+        <span class="menu-label">Liquidaciones</span>
+      </button>
+      <button class="menu-btn" data-tab="importar">
+        <span class="menu-icon">📥</span>
+        <span class="menu-label">Importar Correo</span>
+      </button>
+      <button class="menu-btn" data-tab="estadillo">
+        <span class="menu-icon">🪙</span>
+        <span class="menu-label">Estadillo</span>
+      </button>
+      <button class="menu-btn" data-tab="historial">
+        <span class="menu-icon">📜</span>
+        <span class="menu-label">Historial</span>
+      </button>
+      <button class="menu-btn" data-tab="backup">
+        <span class="menu-icon">💾</span>
+        <span class="menu-label">Copias de Seguridad</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ===================== PANTALLAS DE SECCIÓN ===================== -->
+  <main class="container" id="contenidoSecciones" style="display:none;">
+
+    <!-- RECAUDACIONES -->
     <section id="tab-recaudaciones" class="tab-content">
-      <h2>Recaudaciones</h2>
-
-      <!-- Formulario -->
+      <h2>💰 Recaudaciones</h2>
       <form id="formRecaudacion" class="form-card">
         <input type="hidden" id="recaudacionId" />
-
         <div class="form-row">
           <label>Fecha
             <input type="date" id="recFecha" required />
@@ -613,7 +773,6 @@ tbody tr:hover {
             <input type="text" id="recServicio" placeholder="Ej: Línea 5" required />
           </label>
         </div>
-
         <div class="form-row">
           <label>Primera Parte (€)
             <input type="number" id="recParte1" step="0.01" value="0" required />
@@ -625,14 +784,11 @@ tbody tr:hover {
             <input type="number" id="recTotal" step="0.01" value="0" readonly />
           </label>
         </div>
-
         <div class="form-actions">
           <button type="submit" class="btn btn-primary">💾 Guardar</button>
           <button type="button" id="btnCancelarRec" class="btn btn-secondary">✖ Cancelar</button>
         </div>
       </form>
-
-      <!-- Filtros (desplegable) -->
       <button type="button" class="btn btn-secondary btn-toggle-filtros" data-target="filtrosRec">🔍 Filtros y orden</button>
       <div class="filters" id="filtrosRec" style="display:none;">
         <label>Buscar por fecha
@@ -649,86 +805,64 @@ tbody tr:hover {
         </label>
         <button id="btnLimpiarFiltrosRec" class="btn btn-secondary">Limpiar filtros</button>
       </div>
-
-      <!-- Tabla -->
       <div class="table-wrapper">
         <table id="tablaRecaudaciones">
           <thead>
             <tr>
-              <th>Fecha</th>
-              <th>Servicio</th>
-              <th>1ª Parte</th>
-              <th>2ª Parte</th>
-              <th>Total</th>
-              <th>Acciones</th>
+              <th>Fecha</th><th>Servicio</th><th>1ª Parte</th><th>2ª Parte</th><th>Total</th><th>Acciones</th>
             </tr>
           </thead>
-          <tbody>
-            <!-- Generado dinámicamente -->
-          </tbody>
+          <tbody></tbody>
         </table>
       </div>
       <p class="empty-msg" id="recVacio" style="display:none;">No hay recaudaciones registradas.</p>
     </section>
 
-    <!-- ===================== PANTALLA: LIQUIDACIONES ===================== -->
+    <!-- LIQUIDACIONES -->
     <section id="tab-liquidaciones" class="tab-content">
-      <h2>Liquidaciones</h2>
+      <h2>🧾 Liquidaciones</h2>
 
-      <!-- ---- ESCÁNER DE TICKET POR CÁMARA ---- -->
       <div class="camara-card">
         <div class="camara-header">
           <span>📷 Escanear ticket con la cámara</span>
           <button type="button" id="btnToggleCamara" class="btn btn-primary">Abrir cámara</button>
         </div>
-
         <div id="areaCamara" style="display:none;">
-
-          <!-- Clave API Google Vision (solo visible si no está guardada) -->
           <div id="bloqueApiKey" style="display:none;">
             <p class="help-text">
-              Introduce tu clave de la API de Google Cloud Vision para activar el escáner.
-              Se guardará solo en este dispositivo y no se comparte con nadie.
+              Introduce tu clave gratuita de OCR.space para activar el escáner.
+              Consíguela gratis en <strong>ocr.space/ocrapi</strong> con tu correo.
+              Se guardará solo en este dispositivo.
             </p>
             <div class="form-row">
-              <label>Clave API Google (AIza...)
-                <input type="password" id="inputApiKeyGoogle" placeholder="AIzaSy..." autocomplete="off" />
+              <label>Clave API OCR.space
+                <input type="password" id="inputApiKeyGoogle" placeholder="K8579..." autocomplete="off" />
               </label>
             </div>
             <div class="form-actions">
               <button type="button" id="btnGuardarApiKey" class="btn btn-primary">💾 Guardar clave</button>
             </div>
           </div>
-
-          <!-- Área activa cuando hay clave guardada -->
           <div id="bloqueEscaneo" style="display:none;">
-
             <input type="file" id="inputFotoTicket" accept="image/*" capture="environment" style="display:none;" />
-
             <div id="previsualizacion" style="display:none; margin:10px 0;">
               <img id="fotoPrevia" src="" alt="Foto del ticket" style="max-width:100%; border-radius:8px;" />
             </div>
-
             <div class="form-actions" style="margin-top:10px;">
               <button type="button" id="btnHacerFoto" class="btn btn-primary">📷 Hacer foto al ticket</button>
               <button type="button" id="btnAnalizarFoto" class="btn btn-primary" style="display:none;">🔍 Extraer datos</button>
               <button type="button" id="btnDescartarFoto" class="btn btn-secondary" style="display:none;">✖ Descartar foto</button>
             </div>
-
             <div class="form-actions" style="margin-top:6px;">
               <button type="button" id="btnCambiarApiKey" class="btn btn-secondary" style="font-size:0.78rem; padding:5px 10px;">⚙️ Cambiar clave API</button>
             </div>
-
           </div>
-
           <div id="estadoEscaneo" class="help-text" style="margin-top:8px; min-height:24px;"></div>
         </div>
       </div>
 
-      <!-- Formulario manual -->
       <form id="formLiquidacion" class="form-card">
         <input type="hidden" id="liquidacionId" />
-
         <div class="form-row">
           <label>Fecha
             <input type="date" id="liqFecha" required />
@@ -737,7 +871,6 @@ tbody tr:hover {
             <input type="text" id="liqRecibo" placeholder="Ej: 123456" required />
           </label>
         </div>
-
         <div class="form-row">
           <label>Máquina
             <input type="text" id="liqMaquina" placeholder="Ej: M-07" required />
@@ -746,14 +879,12 @@ tbody tr:hover {
             <input type="number" id="liqImporte" step="0.01" value="0" required />
           </label>
         </div>
-
         <div class="form-actions">
           <button type="submit" class="btn btn-primary">💾 Guardar</button>
           <button type="button" id="btnCancelarLiq" class="btn btn-secondary">✖ Cancelar</button>
         </div>
       </form>
 
-      <!-- Filtros (desplegable) -->
       <button type="button" class="btn btn-secondary btn-toggle-filtros" data-target="filtrosLiq">🔍 Filtros y orden</button>
       <div class="filters" id="filtrosLiq" style="display:none;">
         <label>Buscar (recibo, máquina o fecha)
@@ -769,66 +900,43 @@ tbody tr:hover {
         </label>
         <button id="btnLimpiarFiltrosLiq" class="btn btn-secondary">Limpiar filtros</button>
       </div>
-
-      <!-- Tabla -->
       <div class="table-wrapper">
         <table id="tablaLiquidaciones">
           <thead>
             <tr>
-              <th>Fecha</th>
-              <th>Nº Recibo</th>
-              <th>Máquina</th>
-              <th>Importe</th>
-              <th>Acciones</th>
+              <th>Fecha</th><th>Nº Recibo</th><th>Máquina</th><th>Importe</th><th>Acciones</th>
             </tr>
           </thead>
-          <tbody>
-            <!-- Generado dinámicamente -->
-          </tbody>
+          <tbody></tbody>
         </table>
       </div>
       <p class="empty-msg" id="liqVacio" style="display:none;">No hay liquidaciones registradas.</p>
     </section>
 
-    <!-- ===================== PANTALLA: IMPORTAR CORREO ===================== -->
+    <!-- IMPORTAR CORREO -->
     <section id="tab-importar" class="tab-content">
-      <h2>Importación Rápida de Liquidaciones</h2>
+      <h2>📥 Importar Correo</h2>
       <p class="help-text">
         Pega aquí el texto del correo electrónico recibido. La aplicación intentará detectar
         automáticamente la <strong>fecha</strong>, el <strong>número de recibo</strong>, la
         <strong>máquina</strong> y el <strong>importe</strong>.
       </p>
-
       <textarea id="textoCorreo" rows="8" placeholder="Pega aquí el texto del correo..."></textarea>
-
       <div class="form-actions">
         <button id="btnAnalizarCorreo" class="btn btn-primary">🔍 Analizar Correo</button>
         <button id="btnLimpiarCorreo" class="btn btn-secondary">🗑 Limpiar</button>
       </div>
-
-      <!-- Formulario de confirmación tras análisis -->
       <div id="resultadoAnalisis" class="form-card" style="display:none;">
         <h3>Datos detectados</h3>
-        <p class="help-text">Revisa y completa los campos que no se hayan detectado automáticamente.</p>
-
+        <p class="help-text">Revisa y completa los campos no detectados.</p>
         <div class="form-row">
-          <label>Fecha
-            <input type="date" id="impFecha" />
-          </label>
-          <label>Número de Recibo
-            <input type="text" id="impRecibo" />
-          </label>
+          <label>Fecha <input type="date" id="impFecha" /></label>
+          <label>Número de Recibo <input type="text" id="impRecibo" /></label>
         </div>
-
         <div class="form-row">
-          <label>Máquina
-            <input type="text" id="impMaquina" />
-          </label>
-          <label>Importe (€)
-            <input type="number" id="impImporte" step="0.01" />
-          </label>
+          <label>Máquina <input type="text" id="impMaquina" /></label>
+          <label>Importe (€) <input type="number" id="impImporte" step="0.01" /></label>
         </div>
-
         <div class="form-actions">
           <button id="btnGuardarImportado" class="btn btn-primary">✅ Guardar Liquidación</button>
           <button id="btnCancelarImportado" class="btn btn-secondary">✖ Cancelar</button>
@@ -836,51 +944,33 @@ tbody tr:hover {
       </div>
     </section>
 
-    <!-- ===================== PANTALLA: ESTADILLO ===================== -->
+    <!-- ESTADILLO -->
     <section id="tab-estadillo" class="tab-content">
-      <h2>Estadillo de Monedas y Billetes</h2>
-      <p class="help-text">
-        Indica la cantidad de cada moneda o billete que tienes para liquidar.
-        El total se calculará automáticamente.
-      </p>
-
+      <h2>🪙 Estadillo de Monedas y Billetes</h2>
+      <p class="help-text">Indica la cantidad de cada moneda o billete. El total se calcula automáticamente.</p>
       <div class="cards">
         <div class="card">
           <div class="card-title">Total Estadillo</div>
           <div class="card-value" id="totalEstadillo">0,00 €</div>
         </div>
       </div>
-
       <div class="table-wrapper">
         <table id="tablaEstadillo">
           <thead>
-            <tr>
-              <th>Valor</th>
-              <th>Cantidad</th>
-              <th>Subtotal</th>
-            </tr>
+            <tr><th>Valor</th><th>Cantidad</th><th>Subtotal</th></tr>
           </thead>
-          <tbody>
-            <!-- Generado dinámicamente -->
-          </tbody>
+          <tbody></tbody>
         </table>
       </div>
-
       <div class="form-actions">
         <button id="btnLimpiarEstadillo" class="btn btn-secondary">🗑 Vaciar Estadillo</button>
       </div>
     </section>
 
-
-    <!-- ===================== PANTALLA: HISTORIAL ===================== -->
+    <!-- HISTORIAL -->
     <section id="tab-historial" class="tab-content">
-      <h2>Historial de Movimientos</h2>
-      <p class="help-text">
-        Aquí aparecen, en orden, todas las recaudaciones y liquidaciones que se han
-        registrado (tanto las añadidas manualmente como las importadas desde correo).
-      </p>
-
-      <!-- Filtros (desplegable) -->
+      <h2>📜 Historial de Movimientos</h2>
+      <p class="help-text">Todas las recaudaciones y liquidaciones registradas en orden cronológico.</p>
       <button type="button" class="btn btn-secondary btn-toggle-filtros" data-target="filtrosHistorial">🔍 Filtros y orden</button>
       <div class="filters" id="filtrosHistorial" style="display:none;">
         <label>Tipo
@@ -900,50 +990,32 @@ tbody tr:hover {
           </select>
         </label>
       </div>
-
-      <!-- Tabla -->
       <div class="table-wrapper">
         <table id="tablaHistorial">
           <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Tipo</th>
-              <th>Detalle</th>
-              <th>Importe</th>
-            </tr>
+            <tr><th>Fecha</th><th>Tipo</th><th>Detalle</th><th>Importe</th></tr>
           </thead>
-          <tbody>
-            <!-- Generado dinámicamente -->
-          </tbody>
+          <tbody></tbody>
         </table>
       </div>
       <p class="empty-msg" id="historialVacio" style="display:none;">No hay movimientos registrados todavía.</p>
     </section>
 
-
-    <!-- ===================== PANTALLA: COPIAS DE SEGURIDAD ===================== -->
+    <!-- COPIAS DE SEGURIDAD -->
     <section id="tab-backup" class="tab-content">
-      <h2>Copias de Seguridad</h2>
-
+      <h2>💾 Copias de Seguridad</h2>
       <div class="info-box">
-        <p>📅 <strong>Copia automática diaria:</strong> una vez al día, al abrir la app,
-        se generará y descargará automáticamente un archivo de copia de seguridad
-        (sustituye al del día anterior, siempre con el mismo nombre).</p>
+        <p>📅 <strong>Copia automática diaria:</strong> cada vez que abres la app se descarga automáticamente una copia del día (sustituye a la anterior).</p>
         <p id="estadoBackupAuto" style="margin-top:6px;"></p>
       </div>
-
       <div class="form-card">
         <h3>Exportar datos</h3>
-        <p class="help-text">Descarga un archivo JSON con todas las recaudaciones y liquidaciones registradas.</p>
+        <p class="help-text">Descarga un archivo JSON con todas las recaudaciones y liquidaciones.</p>
         <button id="btnExportar" class="btn btn-primary">⬇️ Exportar datos (JSON)</button>
       </div>
-
       <div class="form-card">
         <h3>Importar datos</h3>
-        <p class="help-text">
-          Restaura los datos desde un archivo JSON exportado previamente.
-          <strong>Atención:</strong> esta acción sustituirá los datos actuales.
-        </p>
+        <p class="help-text"><strong>Atención:</strong> esta acción sustituirá los datos actuales.</p>
         <input type="file" id="inputImportarJSON" accept="application/json" />
         <button id="btnImportar" class="btn btn-primary">⬆️ Importar datos</button>
       </div>
@@ -951,10 +1023,7 @@ tbody tr:hover {
 
   </main>
 
-  <!-- Notificaciones tipo "toast" -->
   <div id="toast" class="toast"></div>
-
-  <!-- Scripts -->
   <script>
 /* =========================================================
    APP.JS - Control de Recaudaciones y Liquidaciones TUSSAM
@@ -1295,61 +1364,64 @@ var editandoLiquidacionId = null;
    ========================================================= */
 
 function inicializarTabs() {
-  var botones = document.querySelectorAll(".tab-btn");
-
-  botones.forEach(function (boton) {
-    boton.addEventListener("click", function () {
-      var tabId = boton.getAttribute("data-tab");
-      cambiarTab(tabId);
+  // Botones del menú principal → abrir sección
+  document.querySelectorAll(".menu-btn").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var tabId = btn.getAttribute("data-tab");
+      abrirSeccion(tabId);
     });
+  });
+
+  // Botón volver → volver al menú
+  document.getElementById("btnVolver").addEventListener("click", function () {
+    volverAlMenu();
   });
 }
 
 /**
- * Inicializa los botones que muestran/ocultan los paneles de filtros
- * (búsqueda y orden), que permanecen ocultos por defecto y solo se
- * despliegan cuando el usuario los necesita.
+ * Abre una sección ocultando el menú principal y mostrando el contenido.
  */
-function inicializarTogglesFiltros() {
-  var botones = document.querySelectorAll(".btn-toggle-filtros");
+function abrirSeccion(tabId) {
+  // Ocultar menú
+  document.getElementById("menuPrincipal").style.display = "none";
 
-  botones.forEach(function (boton) {
-    boton.addEventListener("click", function () {
-      var targetId = boton.getAttribute("data-target");
-      var panel = document.getElementById(targetId);
-      if (!panel) return;
+  // Mostrar contenedor de secciones
+  document.getElementById("contenidoSecciones").style.display = "block";
 
-      var visible = panel.style.display !== "none";
-
-      if (visible) {
-        panel.style.display = "none";
-        boton.classList.remove("activo");
-      } else {
-        panel.style.display = "flex";
-        boton.classList.add("activo");
-      }
-    });
+  // Ocultar todas las secciones y mostrar la correcta
+  document.querySelectorAll(".tab-content").forEach(function (s) {
+    s.style.display = "none";
   });
+  document.getElementById("tab-" + tabId).style.display = "block";
+
+  // Actualizar cabecera
+  var titulos = {
+    recaudaciones: "💰 Recaudaciones",
+    liquidaciones: "🧾 Liquidaciones",
+    importar:      "📥 Importar Correo",
+    estadillo:     "🪙 Estadillo",
+    historial:     "📜 Historial",
+    backup:        "💾 Copias de Seguridad"
+  };
+  document.getElementById("headerTitle").textContent = titulos[tabId] || "Control Liquidación";
+  document.getElementById("headerIcon").style.display = "none";
+  document.getElementById("btnVolver").style.display = "inline-flex";
+
+  // Acciones especiales al entrar en cada sección
+  if (tabId === "estadillo") renderizarEstadillo();
+  if (tabId === "historial") renderizarHistorial();
 }
 
-function cambiarTab(tabId) {
-  document.querySelectorAll(".tab-btn").forEach(function (b) {
-    b.classList.remove("active");
-  });
-  document.querySelectorAll(".tab-content").forEach(function (c) {
-    c.classList.remove("active");
-  });
-
-  document.querySelector('.tab-btn[data-tab="' + tabId + '"]').classList.add("active");
-  document.getElementById("tab-" + tabId).classList.add("active");
-
-  if (tabId === "estadillo") {
-    renderizarEstadillo();
-  }
-
-  if (tabId === "historial") {
-    renderizarHistorial();
-  }
+/**
+ * Vuelve al menú principal desde cualquier sección.
+ */
+function volverAlMenu() {
+  document.getElementById("contenidoSecciones").style.display = "none";
+  document.getElementById("menuPrincipal").style.display = "flex";
+  document.getElementById("headerTitle").textContent = "Control Liquidación";
+  document.getElementById("headerIcon").style.display = "inline";
+  document.getElementById("btnVolver").style.display = "none";
+  actualizarResumen();
 }
 
 /* =========================================================
@@ -1509,6 +1581,16 @@ function resetearFormRecaudacion() {
  */
 function inicializarRecaudaciones() {
   document.getElementById("recFecha").value = fechaHoyISO();
+
+  // Borrar el 0 al pulsar encima de un campo numérico
+  ["recParte1", "recParte2", "recTotal"].forEach(function (id) {
+    document.getElementById(id).addEventListener("focus", function () {
+      if (this.value === "0" || this.value === "0.00") this.value = "";
+    });
+    document.getElementById(id).addEventListener("blur", function () {
+      if (this.value === "") this.value = "0";
+    });
+  });
 
   document.getElementById("recParte1").addEventListener("input", actualizarTotalRecaudacion);
   document.getElementById("recParte2").addEventListener("input", actualizarTotalRecaudacion);
@@ -1700,6 +1782,15 @@ function resetearFormLiquidacion() {
 function inicializarLiquidaciones() {
   document.getElementById("liqFecha").value = fechaHoyISO();
 
+  // Borrar el 0 al pulsar encima del campo de importe
+  var inputImporte = document.getElementById("liqImporte");
+  inputImporte.addEventListener("focus", function () {
+    if (this.value === "0" || this.value === "0.00") this.value = "";
+  });
+  inputImporte.addEventListener("blur", function () {
+    if (this.value === "") this.value = "0";
+  });
+
   document.getElementById("formLiquidacion").addEventListener("submit", function (e) {
     e.preventDefault();
 
@@ -1780,17 +1871,9 @@ function actualizarResumen() {
   var saldoRedondeado = Math.round(saldoPendiente * 100) / 100;
 
   if (saldoRedondeado > 0) {
-    // Saldo positivo: dinero recaudado que aún debes entregar -> ROJO
     cardSaldo.classList.add("positivo");
   } else {
-    // Saldo cero o negativo (has liquidado de más, a tu favor) -> VERDE
     cardSaldo.classList.add("cero");
-  }
-
-  // Si la pestaña de historial está abierta, la refrescamos también
-  var tabHistorial = document.getElementById("tab-historial");
-  if (tabHistorial && tabHistorial.classList.contains("active")) {
-    renderizarHistorial();
   }
 }
 
@@ -2371,85 +2454,60 @@ function mostrarEstadoBackupAuto() {
    ========================================================= */
 
 /* =========================================================
-   15. ESCÁNER DE TICKET CON CÁMARA (Google Cloud Vision OCR)
-   Gratuito hasta 1.000 fotos/mes. La clave API se guarda
-   únicamente en el dispositivo del usuario (LocalStorage).
+   15. ESCÁNER DE TICKET CON CÁMARA (OCR.space - 100% gratuito)
+   Gratuito hasta 25.000 fotos/mes sin tarjeta.
+   Clave obtenida en https://ocr.space/ocrapi
    ========================================================= */
 
-var GOOGLE_VISION_KEY_STORAGE = "tussam_google_vision_key";
+var OCR_SPACE_KEY_STORAGE = "tussam_ocrspace_key";
 
-/**
- * Devuelve la clave API de Google Vision guardada, o null si no hay ninguna.
- */
-function obtenerApiKeyGoogle() {
-  return localStorage.getItem(GOOGLE_VISION_KEY_STORAGE) || null;
+function obtenerApiKeyOCR() {
+  return localStorage.getItem(OCR_SPACE_KEY_STORAGE) || null;
+}
+
+function guardarApiKeyOCR(clave) {
+  localStorage.setItem(OCR_SPACE_KEY_STORAGE, clave.trim());
 }
 
 /**
- * Guarda la clave API de Google Vision en LocalStorage.
+ * Envía la imagen a OCR.space y devuelve el texto extraído.
+ * Usa el endpoint gratuito con idioma español.
  */
-function guardarApiKeyGoogle(clave) {
-  localStorage.setItem(GOOGLE_VISION_KEY_STORAGE, clave.trim());
-}
+function leerTicketConOCRSpace(imagenBase64, apiKey) {
+  // OCR.space acepta la imagen en base64 directamente
+  var formData = new FormData();
+  formData.append("apikey", apiKey);
+  formData.append("language", "spa");
+  formData.append("isOverlayRequired", "false");
+  formData.append("detectOrientation", "true");
+  formData.append("scale", "true");
+  formData.append("OCREngine", "2"); // Motor 2: mejor para tickets impresos
+  formData.append("base64Image", imagenBase64);
 
-/**
- * Convierte una imagen (dataURL base64) en texto usando la API de
- * Google Cloud Vision (método DOCUMENT_TEXT_DETECTION, optimizado
- * para documentos impresos como tickets de máquina).
- *
- * @param {string} imagenBase64 - dataURL completo (data:image/jpeg;base64,...)
- * @param {string} apiKey       - Clave API de Google Cloud Vision
- * @returns {Promise<string>}   - Texto extraído de la imagen
- */
-function leerTicketConGoogleVision(imagenBase64, apiKey) {
-  // Google Vision necesita solo la parte base64, sin el prefijo data:image/...
-  var base64puro = imagenBase64.split(",")[1];
-
-  var url = "https://vision.googleapis.com/v1/images:annotate?key=" + apiKey;
-
-  var cuerpo = {
-    requests: [
-      {
-        image: { content: base64puro },
-        features: [
-          {
-            // DOCUMENT_TEXT_DETECTION es más preciso que TEXT_DETECTION
-            // para texto de impresoras térmicas (tickets)
-            type: "DOCUMENT_TEXT_DETECTION",
-            maxResults: 1
-          }
-        ],
-        imageContext: {
-          languageHints: ["es", "en"]
-        }
-      }
-    ]
-  };
-
-  return fetch(url, {
+  return fetch("https://api.ocr.space/parse/image", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(cuerpo)
+    body: formData
   })
   .then(function (respuesta) {
     if (!respuesta.ok) {
-      return respuesta.json().then(function (err) {
-        var msg = (err.error && err.error.message) ? err.error.message : "Error desconocido";
-        throw new Error("Google Vision: " + msg);
-      });
+      throw new Error("Error de conexión con OCR.space (" + respuesta.status + ")");
     }
     return respuesta.json();
   })
   .then(function (datos) {
-    var anotacion = datos.responses &&
-                    datos.responses[0] &&
-                    datos.responses[0].fullTextAnnotation;
-
-    if (!anotacion || !anotacion.text) {
-      throw new Error("No se detectó texto en la imagen.");
+    if (datos.IsErroredOnProcessing) {
+      throw new Error(datos.ErrorMessage || "OCR.space no pudo procesar la imagen.");
     }
 
-    return anotacion.text;
+    var texto = datos.ParsedResults &&
+                datos.ParsedResults[0] &&
+                datos.ParsedResults[0].ParsedText;
+
+    if (!texto || texto.trim() === "") {
+      throw new Error("No se detectó texto. Intenta con mejor iluminación.");
+    }
+
+    return texto;
   });
 }
 
@@ -2474,7 +2532,19 @@ function inicializarCamaraOCR() {
 
   var imagenBase64 = null;
 
-  /* --- Mostrar / ocultar área de cámara --- */
+  function mostrarPanelSegunClave() {
+    var clave = obtenerApiKeyOCR();
+    if (clave) {
+      bloqueApiKey.style.display = "none";
+      bloqueEscaneo.style.display = "block";
+      estado.textContent = "✅ Clave lista. ¡Puedes escanear tickets!";
+    } else {
+      bloqueApiKey.style.display = "block";
+      bloqueEscaneo.style.display = "none";
+      estado.textContent = "";
+    }
+  }
+
   btnToggle.addEventListener("click", function () {
     var visible = areaCamara.style.display !== "none";
     if (visible) {
@@ -2488,46 +2558,28 @@ function inicializarCamaraOCR() {
     }
   });
 
-  /* --- Decide qué panel mostrar según si hay clave guardada --- */
-  function mostrarPanelSegunClave() {
-    var clave = obtenerApiKeyGoogle();
-    if (clave) {
-      bloqueApiKey.style.display = "none";
-      bloqueEscaneo.style.display = "block";
-      estado.textContent = "Clave API cargada. ¡Listo para escanear!";
-    } else {
-      bloqueApiKey.style.display = "block";
-      bloqueEscaneo.style.display = "none";
-      estado.textContent = "";
-    }
-  }
-
-  /* --- Guardar clave API --- */
   btnGuardarKey.addEventListener("click", function () {
     var clave = inputApiKey.value.trim();
-    if (!clave || !clave.startsWith("AIza")) {
-      mostrarToast("La clave debe empezar por AIza...", "error");
+    if (!clave) {
+      mostrarToast("Introduce la clave que recibiste por email.", "error");
       return;
     }
-    guardarApiKeyGoogle(clave);
+    guardarApiKeyOCR(clave);
     inputApiKey.value = "";
     mostrarToast("Clave guardada correctamente", "success");
     mostrarPanelSegunClave();
   });
 
-  /* --- Cambiar clave API --- */
   btnCambiarKey.addEventListener("click", function () {
-    localStorage.removeItem(GOOGLE_VISION_KEY_STORAGE);
+    localStorage.removeItem(OCR_SPACE_KEY_STORAGE);
     resetearCamara();
     mostrarPanelSegunClave();
   });
 
-  /* --- Abrir cámara al pulsar el botón --- */
   btnHacerFoto.addEventListener("click", function () {
     inputFoto.click();
   });
 
-  /* --- Previsualizar la foto tomada --- */
   inputFoto.addEventListener("change", function () {
     var archivo = inputFoto.files[0];
     if (!archivo) return;
@@ -2540,20 +2592,18 @@ function inicializarCamaraOCR() {
       btnAnalizar.style.display = "inline-block";
       btnDescartar.style.display = "inline-block";
       btnHacerFoto.style.display = "none";
-      estado.textContent = "Foto lista. Pulsa 'Extraer datos' cuando estés listo.";
+      estado.textContent = "📷 Foto lista. Pulsa 'Extraer datos'.";
     };
     reader.readAsDataURL(archivo);
     inputFoto.value = "";
   });
 
-  /* --- Descartar foto --- */
   btnDescartar.addEventListener("click", resetearCamara);
 
-  /* --- Extraer datos con Google Vision --- */
   btnAnalizar.addEventListener("click", function () {
     if (!imagenBase64) return;
 
-    var apiKey = obtenerApiKeyGoogle();
+    var apiKey = obtenerApiKeyOCR();
     if (!apiKey) {
       mostrarToast("No hay clave API guardada.", "error");
       mostrarPanelSegunClave();
@@ -2562,12 +2612,12 @@ function inicializarCamaraOCR() {
 
     btnAnalizar.disabled = true;
     btnDescartar.disabled = true;
-    estado.textContent = "⏳ Enviando foto a Google Vision...";
+    estado.textContent = "⏳ Leyendo el ticket...";
 
-    leerTicketConGoogleVision(imagenBase64, apiKey)
+    leerTicketConOCRSpace(imagenBase64, apiKey)
       .then(function (textoOCR) {
-        console.log("=== TEXTO OCR (Google Vision) ===\n" + textoOCR);
-        estado.textContent = "✅ Texto extraído. Detectando campos...";
+        console.log("=== TEXTO OCR (OCR.space) ===\n" + textoOCR);
+        estado.textContent = "✅ Texto leído. Detectando campos...";
 
         var datos = extraerCamposTUSSAM(textoOCR);
         rellenarFormularioConOCR(datos);
@@ -2577,14 +2627,13 @@ function inicializarCamaraOCR() {
         resetearCamara();
       })
       .catch(function (err) {
-        console.error("Error Vision:", err);
-        estado.textContent = "❌ Error: " + (err.message || "No se pudo leer el ticket.");
+        console.error("Error OCR:", err);
+        estado.textContent = "❌ " + (err.message || "Error al leer el ticket.");
         btnAnalizar.disabled = false;
         btnDescartar.disabled = false;
       });
   });
 
-  /* --- Reset del área de cámara --- */
   function resetearCamara() {
     imagenBase64 = null;
     fotoPrevia.src = "";
@@ -2602,7 +2651,17 @@ function inicializarCamaraOCR() {
 document.addEventListener("DOMContentLoaded", function () {
   inicializarTema();
   inicializarTabs();
-  inicializarTogglesFiltros();
+
+  // Toggles de filtros desplegables
+  document.querySelectorAll(".btn-toggle-filtros").forEach(function (boton) {
+    boton.addEventListener("click", function () {
+      var panel = document.getElementById(boton.getAttribute("data-target"));
+      if (!panel) return;
+      var visible = panel.style.display !== "none";
+      panel.style.display = visible ? "none" : "flex";
+      boton.classList.toggle("activo", !visible);
+    });
+  });
 
   abrirBaseDatos().then(function () {
     inicializarRecaudaciones();

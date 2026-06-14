@@ -690,6 +690,49 @@ tbody tr:hover {
   }
 }
 
+/* =========================================================
+   BANNER DE AVISO DE JORNADAS PENDIENTES
+   ========================================================= */
+.banner-aviso {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  z-index: 1;
+  animation: aparecer 0.3s ease;
+}
+
+@keyframes aparecer {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.banner-alerta {
+  background-color: #fff3cd;
+  border: 2px solid #e6a817;
+  color: #7a5800;
+}
+
+body.dark .banner-alerta {
+  background-color: #3a2e00;
+  border-color: #e6a817;
+  color: #ffd966;
+}
+
+.banner-urgente {
+  background-color: var(--color-danger-bg);
+  border: 2px solid var(--color-danger);
+  color: var(--color-danger);
+}
+
+.banner-icono {
+  font-size: 1.8rem;
+  flex-shrink: 0;
+}
+
   </style>
 </head>
 <body>
@@ -711,6 +754,9 @@ tbody tr:hover {
 
     <!-- Marca de agua de fondo -->
     <div class="watermark">LIQUIDACIÓN</div>
+
+    <!-- Banner de aviso de jornadas pendientes (oculto por defecto) -->
+    <div id="bannerAviso" class="banner-aviso" style="display:none;"></div>
 
     <!-- Tarjetas resumen encima del menú -->
     <div class="menu-resumen">
@@ -1422,6 +1468,7 @@ function volverAlMenu() {
   document.getElementById("headerIcon").style.display = "inline";
   document.getElementById("btnVolver").style.display = "none";
   actualizarResumen();
+  comprobarAvisoLiquidacion();
 }
 
 /* =========================================================
@@ -1867,13 +1914,91 @@ function actualizarResumen() {
   var cardSaldo = document.getElementById("cardSaldo");
   cardSaldo.classList.remove("positivo", "cero");
 
-  // Redondeamos a 2 decimales para evitar problemas de precisión flotante
   var saldoRedondeado = Math.round(saldoPendiente * 100) / 100;
 
   if (saldoRedondeado > 0) {
     cardSaldo.classList.add("positivo");
   } else {
     cardSaldo.classList.add("cero");
+  }
+
+  // Comprobar aviso de jornadas pendientes de liquidar
+  comprobarAvisoLiquidacion();
+}
+
+/* =========================================================
+   9.1 AVISO DE JORNADAS PENDIENTES DE LIQUIDAR
+   ========================================================= */
+
+/**
+ * Calcula cuántas jornadas (días distintos) tienen recaudación
+ * registrada pero NO tienen ninguna liquidación posterior.
+ *
+ * Regla TUSSAM: máximo 4 jornadas sin liquidar.
+ * Al llegar a 4 → aviso de alerta.
+ * Al llegar a 5 → aviso de urgencia (límite superado).
+ */
+function calcularJornadasSinLiquidar() {
+  if (listaRecaudaciones.length === 0) return 0;
+
+  // Encontrar la fecha de la última liquidación registrada
+  var fechaUltimaLiq = "";
+  listaLiquidaciones.forEach(function (liq) {
+    if (liq.fecha && liq.fecha > fechaUltimaLiq) {
+      fechaUltimaLiq = liq.fecha;
+    }
+  });
+
+  // Contar días únicos con recaudación que NO están cubiertos por ninguna liquidación.
+  // Una liquidación cubre todas las recaudaciones de su misma fecha o anteriores.
+  var diasPendientes = {};
+  listaRecaudaciones.forEach(function (rec) {
+    if (!rec.fecha) return;
+    // Si la recaudación es de un día POSTERIOR a la última liquidación → pendiente
+    // Si es del mismo día o anterior → cubierta
+    if (fechaUltimaLiq === "" || rec.fecha > fechaUltimaLiq) {
+      diasPendientes[rec.fecha] = true;
+    }
+  });
+
+  var total = Object.keys(diasPendientes).length;
+  console.log("Jornadas pendientes:", total, "| Última liq:", fechaUltimaLiq || "ninguna");
+  return total;
+}
+
+/**
+ * Muestra u oculta el banner de aviso en el menú principal
+ * según las jornadas pendientes de liquidar.
+ */
+function comprobarAvisoLiquidacion() {
+  var banner = document.getElementById("bannerAviso");
+  if (!banner) return;
+
+  var pendientes = calcularJornadasSinLiquidar();
+
+  banner.className = "banner-aviso";
+  banner.style.display = "none";
+
+  if (pendientes >= 5) {
+    banner.style.display = "flex";
+    banner.className = "banner-aviso banner-urgente";
+    banner.innerHTML =
+      "<span class='banner-icono'>🚨</span>" +
+      "<div>" +
+        "<strong>¡Límite superado!</strong><br>" +
+        "Tienes <strong>" + pendientes + " jornadas</strong> sin liquidar. " +
+        "Debes liquidar cuanto antes." +
+      "</div>";
+  } else if (pendientes === 4) {
+    banner.style.display = "flex";
+    banner.className = "banner-aviso banner-alerta";
+    banner.innerHTML =
+      "<span class='banner-icono'>⚠️</span>" +
+      "<div>" +
+        "<strong>Aviso: 4 jornadas sin liquidar</strong><br>" +
+        "Esta es tu última jornada antes del límite. " +
+        "Liquida antes de tu próxima recaudación." +
+      "</div>";
   }
 }
 
@@ -2314,7 +2439,7 @@ function exportarDatosArchivo(nombreArchivo, mostrarAviso) {
  */
 function exportarDatos() {
   var fechaArchivo = fechaHoyISO();
-  exportarDatosArchivo("tussam_backup_" + fechaArchivo + ".json", true);
+  exportarDatosArchivo("BackupTUSSAM_" + fechaArchivo + ".json", true);
 }
 
 /**
@@ -2394,7 +2519,7 @@ var BACKUP_AUTO_KEY = "tussam_ultimo_backup_auto";
 
 // Nombre fijo del archivo de copia automática (siempre el mismo,
 // para que al descargarse varias veces sustituya al anterior)
-var BACKUP_AUTO_NOMBRE = "tussam_backup_automatico.json";
+var BACKUP_AUTO_NOMBRE = "BackupTUSSAM_automatico.json";
 
 /**
  * Comprueba si ya se ha hecho la copia de seguridad automática hoy.

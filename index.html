@@ -1900,68 +1900,58 @@ function analizarTextoCorreo(texto) {
  *   Total:       EUR 112,00
  */
 function extraerCamposTUSSAM(texto) {
-  var resultado = {
-    fecha: "",
-    recibo: "",
-    maquina: "",
-    importe: ""
-  };
+  var resultado = { fecha: "", recibo: "", maquina: "", importe: "" };
+
+  // Normalizar texto: quitar retornos de carro y espacios múltiples
+  var t = texto.replace(/\r/g, "\n").replace(/[ \t]+/g, " ");
 
   // --- RECIBO ---
-  // Línea "Recibo: 184686" o "Recibo : 184686"
-  var mRecibo = texto.match(/recibo\s*[:\-]?\s*(\d+)/i);
-  if (mRecibo) {
-    resultado.recibo = mRecibo[1].trim();
-  }
+  // "Recibo: 182352" / "Recibo:182352" / OCR puede leer "Reecibo" o "Recib0"
+  var mRecibo = t.match(/[Rr]ec[ib]{2}o\s*[:\-]?\s*(\d{4,10})/);
+  if (!mRecibo) mRecibo = t.match(/[Rr]ecibo\s*[:\-]?\s*(\d{4,10})/);
+  if (mRecibo) resultado.recibo = mRecibo[1].trim();
 
   // --- MÁQUINA ---
-  // Línea "Máquina: 201907010007"
-  var mMaquina = texto.match(/m[aá]quina\s*[:\-]?\s*([\w\-]+)/i);
-  if (mMaquina) {
-    resultado.maquina = mMaquina[1].trim();
-  }
+  // "Máquina: 201907010007" — número de 6 a 15 dígitos
+  var mMaquina = t.match(/[Mm][aá]quina\s*[:\-]?\s*(\d{6,15})/);
+  if (mMaquina) resultado.maquina = mMaquina[1].trim();
 
   // --- FECHA ---
-  // Formato "Fecha: 28/04/26" (DD/MM/AA o DD/MM/AAAA)
-  // También acepta DD-MM-AA, DD/MM/YYYY, YYYY-MM-DD
-  var mFecha = texto.match(/fecha\s*[:\-]?\s*(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/i);
+  // "Fecha: 2/04/26" — día puede ir sin cero delante
+  var mFecha = t.match(/[Ff]echa\s*[:\-]?\s*(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})/);
   if (mFecha) {
-    var dia = mFecha[1].padStart(2, "0");
-    var mes = mFecha[2].padStart(2, "0");
-    var anio = mFecha[3];
-    // Si el año viene en formato corto (26 → 2026)
-    if (anio.length === 2) {
-      anio = "20" + anio;
-    }
+    var dia  = mFecha[1].padStart(2, "0");
+    var mes  = mFecha[2].padStart(2, "0");
+    var anio = mFecha[3].length === 2 ? "20" + mFecha[3] : mFecha[3];
     resultado.fecha = anio + "-" + mes + "-" + dia;
-  } else {
-    // Fallback: cualquier fecha DD/MM/AA o DD/MM/YYYY sin etiqueta
-    var mFecha2 = texto.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
-    if (mFecha2) {
-      var dia2 = mFecha2[1].padStart(2, "0");
-      var mes2 = mFecha2[2].padStart(2, "0");
-      var anio2 = mFecha2[3];
-      if (anio2.length === 2) anio2 = "20" + anio2;
-      resultado.fecha = anio2 + "-" + mes2 + "-" + dia2;
-    }
   }
 
   // --- IMPORTE TOTAL ---
-  // Línea "Total: EUR 112,00" o "Total: EUR 112.00"
-  // Primero busca la línea específica "Total:" (no "Total monedas" ni "Total billetes")
-  var mTotal = texto.match(/^total\s*[:\-]?\s*(?:eur)?\s*([\d.,]+)/im);
-  if (mTotal) {
-    resultado.importe = normalizarImporte(mTotal[1]);
-  } else {
-    // Fallback: "EUR 112,00" al final de línea
-    var mEur = texto.match(/eur\s+([\d.,]+)\s*$/im);
-    if (mEur) {
-      resultado.importe = normalizarImporte(mEur[1]);
-    }
+  // Busca línea "Total: EUR 74,00" ignorando "Total monedas" y "Total billetes"
+  var lineas = t.split("\n");
+  for (var i = 0; i < lineas.length; i++) {
+    var linea = lineas[i].trim();
+    if (/[Tt]otal\s+(monedas|billetes)/i.test(linea)) continue;
+    // Línea que empieza por "Total" y contiene un número con coma o punto
+    var mT = linea.match(/^[Tt]otal\s*[:\-]?\s*(?:[Ee][Uu][Rr])?\s*(\d+[,.]\d{2})/);
+    if (mT) { resultado.importe = normalizarImporte(mT[1]); break; }
+    // Alternativa: "Total ... EUR 74,00"
+    var mT2 = linea.match(/^[Tt]otal[^\n]*[Ee][Uu][Rr]\s*(\d+[,.]\d{2})/);
+    if (mT2) { resultado.importe = normalizarImporte(mT2[1]); break; }
+  }
+
+  // Último recurso: el último "EUR XX,XX" que aparezca en el texto
+  if (!resultado.importe) {
+    var todos = [];
+    var re = /[Ee][Uu][Rr]\s*(\d+[,.]\d{2})/g;
+    var m;
+    while ((m = re.exec(t)) !== null) { todos.push(m[1]); }
+    if (todos.length > 0) resultado.importe = normalizarImporte(todos[todos.length - 1]);
   }
 
   return resultado;
 }
+
 
 /**
  * Convierte un importe en texto (ej: "112,00" o "112.00") a número decimal estándar.

@@ -2470,8 +2470,32 @@ function guardarApiKeyOCR(clave) {
 }
 
 /**
+ * Comprime una imagen (dataURL) antes de enviarla a OCR.space.
+ * Reduce el tamaño máximo a 1500px y la calidad al 70%,
+ * lo que es más que suficiente para leer texto de un ticket.
+ */
+function comprimirImagen(dataURL) {
+  return new Promise(function (resolve) {
+    var img = new Image();
+    img.onload = function () {
+      var canvas = document.createElement("canvas");
+      var maxAncho = 1500;
+      var escala = Math.min(1, maxAncho / img.width);
+      canvas.width = img.width * escala;
+      canvas.height = img.height * escala;
+
+      var ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      // Calidad 0.7 = 70%, suficiente para OCR y mucho más ligero
+      resolve(canvas.toDataURL("image/jpeg", 0.7));
+    };
+    img.src = dataURL;
+  });
+}
+
+/**
  * Envía la imagen a OCR.space y devuelve el texto extraído.
- * Usa el endpoint gratuito con idioma español.
  */
 function leerTicketConOCRSpace(imagenBase64, apiKey) {
   // OCR.space acepta la imagen en base64 directamente
@@ -2612,9 +2636,12 @@ function inicializarCamaraOCR() {
 
     btnAnalizar.disabled = true;
     btnDescartar.disabled = true;
-    estado.textContent = "⏳ Leyendo el ticket...";
+    estado.textContent = "⏳ Preparando imagen...";
 
-    leerTicketConOCRSpace(imagenBase64, apiKey)
+    comprimirImagen(imagenBase64).then(function (imagenComprimida) {
+      estado.textContent = "⏳ Leyendo el ticket...";
+      return leerTicketConOCRSpace(imagenComprimida, apiKey);
+    })
       .then(function (textoOCR) {
         console.log("=== TEXTO OCR (OCR.space) ===\n" + textoOCR);
         estado.textContent = "✅ Texto leído. Detectando campos...";

@@ -1,0 +1,2626 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#7a1f2b" />
+  <title>Control de Recaudaciones y Liquidaciones - Liquidación</title>
+
+  <!-- PWA -->
+
+  <!-- Estilos -->
+  <style>
+/* =========================================================
+   ESTILOS GLOBALES - Control TUSSAM
+   Diseño inspirado en Material Design y apps financieras
+   Compatible con modo claro y modo oscuro
+   ========================================================= */
+
+:root {
+  /* --- Modo claro (por defecto): granate, blanco y gris --- */
+  --color-bg: #f2f0f0;
+  --color-surface: #ffffff;
+  --color-text: #2b2424;
+  --color-text-secondary: #6e6464;
+  --color-primary: #7a1f2b;
+  --color-primary-dark: #5a1620;
+  --color-border: #ddd6d6;
+
+  --color-success: #2e7d32;
+  --color-success-bg: #e8f5e9;
+  --color-danger: #c62828;
+  --color-danger-bg: #fdecea;
+
+  --shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  --radius: 12px;
+}
+
+/* --- Modo oscuro --- */
+body.dark {
+  --color-bg: #1a1616;
+  --color-surface: #262020;
+  --color-text: #f1efef;
+  --color-text-secondary: #bdb5b5;
+  --color-primary: #b1414f;
+  --color-primary-dark: #8c2e3a;
+  --color-border: #3a3232;
+
+  --color-success: #66bb6a;
+  --color-success-bg: #1b3320;
+  --color-danger: #ef5350;
+  --color-danger-bg: #3a1d1d;
+
+  --shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  font-family: "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* =========================================================
+   CABECERA
+   ========================================================= */
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--color-primary);
+  color: #ffffff;
+  padding: 14px 16px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow);
+}
+
+.app-header h1 {
+  font-size: 1.15rem;
+  margin: 0;
+  font-weight: 600;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.material-icon {
+  font-size: 1.4rem;
+}
+
+.icon-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: #fff;
+  font-size: 1.2rem;
+  padding: 8px 10px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* =========================================================
+   NAVEGACIÓN POR PESTAÑAS
+   ========================================================= */
+.tabs {
+  display: flex;
+  overflow-x: auto;
+  background-color: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 56px;
+  z-index: 99;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tab-btn {
+  flex: 0 0 auto;
+  background: none;
+  border: none;
+  padding: 12px 16px;
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  white-space: nowrap;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.tab-btn:hover {
+  color: var(--color-primary);
+}
+
+.tab-btn.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* =========================================================
+   CONTENEDOR PRINCIPAL
+   ========================================================= */
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.tab-content {
+  display: none;
+  animation: fadeIn 0.25s ease;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+h2 {
+  margin-top: 4px;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+h3 {
+  margin-top: 0;
+  font-size: 1.05rem;
+}
+
+/* =========================================================
+   TARJETAS RESUMEN (DASHBOARD)
+   ========================================================= */
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.card {
+  background-color: var(--color-surface);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--color-border);
+}
+
+.card-title {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+}
+
+.card-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+/* Estados de saldo */
+#cardSaldo.positivo .card-value {
+  color: var(--color-danger);
+}
+
+#cardSaldo.positivo {
+  background-color: var(--color-danger-bg);
+}
+
+#cardSaldo.cero .card-value {
+  color: var(--color-success);
+}
+
+#cardSaldo.cero {
+  background-color: var(--color-success-bg);
+}
+
+.info-box {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+}
+
+.info-box p {
+  margin: 6px 0;
+}
+
+/* =========================================================
+   FORMULARIOS
+   ========================================================= */
+.form-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow);
+}
+
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.form-row label {
+  flex: 1 1 180px;
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  gap: 4px;
+}
+
+input, select, textarea {
+  font-family: inherit;
+  font-size: 0.95rem;
+  padding: 9px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--color-primary);
+}
+
+textarea {
+  width: 100%;
+  resize: vertical;
+  font-family: monospace;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.btn {
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.2s ease, transform 0.05s ease;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  background-color: var(--color-primary);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  filter: brightness(1.1);
+}
+
+.btn-secondary {
+  background-color: var(--color-border);
+  color: var(--color-text);
+}
+
+.btn-secondary:hover {
+  filter: brightness(0.95);
+}
+
+.btn-danger {
+  background-color: var(--color-danger);
+  color: #fff;
+}
+
+.btn-edit {
+  background-color: var(--color-primary);
+  color: #fff;
+}
+
+.btn-sm {
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  margin-right: 4px;
+  border: none;
+  cursor: pointer;
+}
+
+/* =========================================================
+   FILTROS
+   ========================================================= */
+.btn-toggle-filtros {
+  margin-bottom: 10px;
+}
+
+.btn-toggle-filtros.activo {
+  background-color: var(--color-primary);
+  color: #fff;
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  margin-bottom: 14px;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 12px;
+}
+
+.filters label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  gap: 4px;
+  flex: 1 1 150px;
+}
+
+/* =========================================================
+   TABLAS
+   ========================================================= */
+.table-wrapper {
+  overflow-x: auto;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  min-width: 600px;
+}
+
+thead {
+  background-color: var(--color-primary);
+  color: #fff;
+}
+
+th, td {
+  padding: 10px 12px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+tbody tr {
+  border-bottom: 1px solid var(--color-border);
+}
+
+tbody tr:hover {
+  background-color: rgba(21, 101, 192, 0.06);
+}
+
+.empty-msg {
+  text-align: center;
+  color: var(--color-text-secondary);
+  padding: 16px;
+  font-style: italic;
+}
+
+/* =========================================================
+   ESTADÍSTICAS / GRÁFICOS
+   ========================================================= */
+.chart-container {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-top: 18px;
+  box-shadow: var(--shadow);
+}
+
+/* =========================================================
+   IMPORTACIÓN CORREO
+   ========================================================= */
+.help-text {
+  font-size: 0.88rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 10px;
+}
+
+/* =========================================================
+   TOAST (NOTIFICACIONES)
+   ========================================================= */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(60px);
+  background-color: var(--color-primary-dark);
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  box-shadow: var(--shadow);
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  z-index: 999;
+  max-width: 90%;
+  text-align: center;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.toast.error {
+  background-color: var(--color-danger);
+}
+
+.toast.success {
+  background-color: var(--color-success);
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+@media (max-width: 600px) {
+  .app-header h1 {
+    font-size: 1rem;
+  }
+
+  .card-value {
+    font-size: 1.4rem;
+  }
+
+  .form-row label {
+    flex: 1 1 100%;
+  }
+
+  .filters label {
+    flex: 1 1 100%;
+  }
+}
+
+/* =========================================================
+   ESCÁNER DE TICKET CON CÁMARA
+   ========================================================= */
+.camara-card {
+  background-color: var(--color-surface);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 18px;
+  box-shadow: var(--shadow);
+}
+
+.camara-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--color-primary);
+}
+
+#estadoEscaneo {
+  background-color: var(--color-bg);
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 0.88rem;
+  min-height: 28px;
+}
+
+#fotoPrevia {
+  box-shadow: var(--shadow);
+  border: 1px solid var(--color-border);
+}
+
+  </style>
+
+</head>
+<body>
+
+  <!-- ===================== CABECERA ===================== -->
+  <header class="app-header">
+    <div class="header-left">
+      <span class="material-icon">🚌</span>
+      <h1>Control Liquidación</h1>
+    </div>
+    <div class="header-right">
+      <button id="btnTheme" class="icon-btn" title="Cambiar tema" aria-label="Cambiar tema claro/oscuro">🌙</button>
+    </div>
+  </header>
+
+  <!-- ===================== NAVEGACIÓN (TABS) ===================== -->
+  <nav class="tabs" id="tabs">
+    <button class="tab-btn active" data-tab="inicio">🏠 Inicio</button>
+    <button class="tab-btn" data-tab="recaudaciones">💰 Recaudaciones</button>
+    <button class="tab-btn" data-tab="liquidaciones">🧾 Liquidaciones</button>
+    <button class="tab-btn" data-tab="importar">📥 Importar Correo</button>
+    <button class="tab-btn" data-tab="estadillo">🪙 Estadillo</button>
+    <button class="tab-btn" data-tab="historial">📜 Historial</button>
+    <button class="tab-btn" data-tab="backup">💾 Copias de Seguridad</button>
+  </nav>
+
+  <main class="container">
+
+    <!-- ===================== PANTALLA: INICIO ===================== -->
+    <section id="tab-inicio" class="tab-content active">
+      <h2>Resumen General</h2>
+
+      <div class="cards">
+        <div class="card">
+          <div class="card-title">Total Recaudado</div>
+          <div class="card-value" id="totalRecaudado">0,00 €</div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Total Liquidado</div>
+          <div class="card-value" id="totalLiquidado">0,00 €</div>
+        </div>
+
+        <div class="card" id="cardSaldo">
+          <div class="card-title">Saldo Pendiente</div>
+          <div class="card-value" id="saldoPendiente">0,00 €</div>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <p><strong>Fórmula:</strong> Saldo Pendiente = Total Recaudado − Total Liquidado</p>
+        <p>🔴 Rojo: existe saldo pendiente (Recaudado &gt; Liquidado)</p>
+        <p>🟢 Verde: saldo en cero (todo liquidado)</p>
+      </div>
+    </section>
+
+    <!-- ===================== PANTALLA: RECAUDACIONES ===================== -->
+    <section id="tab-recaudaciones" class="tab-content">
+      <h2>Recaudaciones</h2>
+
+      <!-- Formulario -->
+      <form id="formRecaudacion" class="form-card">
+        <input type="hidden" id="recaudacionId" />
+
+        <div class="form-row">
+          <label>Fecha
+            <input type="date" id="recFecha" required />
+          </label>
+          <label>Servicio
+            <input type="text" id="recServicio" placeholder="Ej: Línea 5" required />
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label>Primera Parte (€)
+            <input type="number" id="recParte1" step="0.01" value="0" required />
+          </label>
+          <label>Segunda Parte (€)
+            <input type="number" id="recParte2" step="0.01" value="0" required />
+          </label>
+          <label>Total (€)
+            <input type="number" id="recTotal" step="0.01" value="0" readonly />
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">💾 Guardar</button>
+          <button type="button" id="btnCancelarRec" class="btn btn-secondary">✖ Cancelar</button>
+        </div>
+      </form>
+
+      <!-- Filtros (desplegable) -->
+      <button type="button" class="btn btn-secondary btn-toggle-filtros" data-target="filtrosRec">🔍 Filtros y orden</button>
+      <div class="filters" id="filtrosRec" style="display:none;">
+        <label>Buscar por fecha
+          <input type="date" id="filtroRecFecha" />
+        </label>
+        <label>Buscar por servicio
+          <input type="text" id="filtroRecServicio" placeholder="Servicio..." />
+        </label>
+        <label>Ordenar por fecha
+          <select id="ordenRecFecha">
+            <option value="desc">Más reciente primero</option>
+            <option value="asc">Más antiguo primero</option>
+          </select>
+        </label>
+        <button id="btnLimpiarFiltrosRec" class="btn btn-secondary">Limpiar filtros</button>
+      </div>
+
+      <!-- Tabla -->
+      <div class="table-wrapper">
+        <table id="tablaRecaudaciones">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Servicio</th>
+              <th>1ª Parte</th>
+              <th>2ª Parte</th>
+              <th>Total</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Generado dinámicamente -->
+          </tbody>
+        </table>
+      </div>
+      <p class="empty-msg" id="recVacio" style="display:none;">No hay recaudaciones registradas.</p>
+    </section>
+
+    <!-- ===================== PANTALLA: LIQUIDACIONES ===================== -->
+    <section id="tab-liquidaciones" class="tab-content">
+      <h2>Liquidaciones</h2>
+
+      <!-- ---- ESCÁNER DE TICKET POR CÁMARA ---- -->
+      <div class="camara-card">
+        <div class="camara-header">
+          <span>📷 Escanear ticket con la cámara</span>
+          <button type="button" id="btnToggleCamara" class="btn btn-primary">Abrir cámara</button>
+        </div>
+
+        <div id="areaCamara" style="display:none;">
+
+          <!-- Clave API Google Vision (solo visible si no está guardada) -->
+          <div id="bloqueApiKey" style="display:none;">
+            <p class="help-text">
+              Introduce tu clave de la API de Google Cloud Vision para activar el escáner.
+              Se guardará solo en este dispositivo y no se comparte con nadie.
+            </p>
+            <div class="form-row">
+              <label>Clave API Google (AIza...)
+                <input type="password" id="inputApiKeyGoogle" placeholder="AIzaSy..." autocomplete="off" />
+              </label>
+            </div>
+            <div class="form-actions">
+              <button type="button" id="btnGuardarApiKey" class="btn btn-primary">💾 Guardar clave</button>
+            </div>
+          </div>
+
+          <!-- Área activa cuando hay clave guardada -->
+          <div id="bloqueEscaneo" style="display:none;">
+
+            <input type="file" id="inputFotoTicket" accept="image/*" capture="environment" style="display:none;" />
+
+            <div id="previsualizacion" style="display:none; margin:10px 0;">
+              <img id="fotoPrevia" src="" alt="Foto del ticket" style="max-width:100%; border-radius:8px;" />
+            </div>
+
+            <div class="form-actions" style="margin-top:10px;">
+              <button type="button" id="btnHacerFoto" class="btn btn-primary">📷 Hacer foto al ticket</button>
+              <button type="button" id="btnAnalizarFoto" class="btn btn-primary" style="display:none;">🔍 Extraer datos</button>
+              <button type="button" id="btnDescartarFoto" class="btn btn-secondary" style="display:none;">✖ Descartar foto</button>
+            </div>
+
+            <div class="form-actions" style="margin-top:6px;">
+              <button type="button" id="btnCambiarApiKey" class="btn btn-secondary" style="font-size:0.78rem; padding:5px 10px;">⚙️ Cambiar clave API</button>
+            </div>
+
+          </div>
+
+          <div id="estadoEscaneo" class="help-text" style="margin-top:8px; min-height:24px;"></div>
+        </div>
+      </div>
+
+      <!-- Formulario manual -->
+      <form id="formLiquidacion" class="form-card">
+        <input type="hidden" id="liquidacionId" />
+
+        <div class="form-row">
+          <label>Fecha
+            <input type="date" id="liqFecha" required />
+          </label>
+          <label>Número de Recibo
+            <input type="text" id="liqRecibo" placeholder="Ej: 123456" required />
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label>Máquina
+            <input type="text" id="liqMaquina" placeholder="Ej: M-07" required />
+          </label>
+          <label>Importe (€)
+            <input type="number" id="liqImporte" step="0.01" value="0" required />
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn-primary">💾 Guardar</button>
+          <button type="button" id="btnCancelarLiq" class="btn btn-secondary">✖ Cancelar</button>
+        </div>
+      </form>
+
+      <!-- Filtros (desplegable) -->
+      <button type="button" class="btn btn-secondary btn-toggle-filtros" data-target="filtrosLiq">🔍 Filtros y orden</button>
+      <div class="filters" id="filtrosLiq" style="display:none;">
+        <label>Buscar (recibo, máquina o fecha)
+          <input type="text" id="filtroLiq" placeholder="Buscar..." />
+        </label>
+        <label>Ordenar por
+          <select id="ordenLiq">
+            <option value="fecha-desc">Fecha (más reciente)</option>
+            <option value="fecha-asc">Fecha (más antiguo)</option>
+            <option value="importe-desc">Importe (mayor a menor)</option>
+            <option value="importe-asc">Importe (menor a mayor)</option>
+          </select>
+        </label>
+        <button id="btnLimpiarFiltrosLiq" class="btn btn-secondary">Limpiar filtros</button>
+      </div>
+
+      <!-- Tabla -->
+      <div class="table-wrapper">
+        <table id="tablaLiquidaciones">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Nº Recibo</th>
+              <th>Máquina</th>
+              <th>Importe</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Generado dinámicamente -->
+          </tbody>
+        </table>
+      </div>
+      <p class="empty-msg" id="liqVacio" style="display:none;">No hay liquidaciones registradas.</p>
+    </section>
+
+    <!-- ===================== PANTALLA: IMPORTAR CORREO ===================== -->
+    <section id="tab-importar" class="tab-content">
+      <h2>Importación Rápida de Liquidaciones</h2>
+      <p class="help-text">
+        Pega aquí el texto del correo electrónico recibido. La aplicación intentará detectar
+        automáticamente la <strong>fecha</strong>, el <strong>número de recibo</strong>, la
+        <strong>máquina</strong> y el <strong>importe</strong>.
+      </p>
+
+      <textarea id="textoCorreo" rows="8" placeholder="Pega aquí el texto del correo..."></textarea>
+
+      <div class="form-actions">
+        <button id="btnAnalizarCorreo" class="btn btn-primary">🔍 Analizar Correo</button>
+        <button id="btnLimpiarCorreo" class="btn btn-secondary">🗑 Limpiar</button>
+      </div>
+
+      <!-- Formulario de confirmación tras análisis -->
+      <div id="resultadoAnalisis" class="form-card" style="display:none;">
+        <h3>Datos detectados</h3>
+        <p class="help-text">Revisa y completa los campos que no se hayan detectado automáticamente.</p>
+
+        <div class="form-row">
+          <label>Fecha
+            <input type="date" id="impFecha" />
+          </label>
+          <label>Número de Recibo
+            <input type="text" id="impRecibo" />
+          </label>
+        </div>
+
+        <div class="form-row">
+          <label>Máquina
+            <input type="text" id="impMaquina" />
+          </label>
+          <label>Importe (€)
+            <input type="number" id="impImporte" step="0.01" />
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button id="btnGuardarImportado" class="btn btn-primary">✅ Guardar Liquidación</button>
+          <button id="btnCancelarImportado" class="btn btn-secondary">✖ Cancelar</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== PANTALLA: ESTADILLO ===================== -->
+    <section id="tab-estadillo" class="tab-content">
+      <h2>Estadillo de Monedas y Billetes</h2>
+      <p class="help-text">
+        Indica la cantidad de cada moneda o billete que tienes para liquidar.
+        El total se calculará automáticamente.
+      </p>
+
+      <div class="cards">
+        <div class="card">
+          <div class="card-title">Total Estadillo</div>
+          <div class="card-value" id="totalEstadillo">0,00 €</div>
+        </div>
+      </div>
+
+      <div class="table-wrapper">
+        <table id="tablaEstadillo">
+          <thead>
+            <tr>
+              <th>Valor</th>
+              <th>Cantidad</th>
+              <th>Subtotal</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Generado dinámicamente -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="form-actions">
+        <button id="btnLimpiarEstadillo" class="btn btn-secondary">🗑 Vaciar Estadillo</button>
+      </div>
+    </section>
+
+
+    <!-- ===================== PANTALLA: HISTORIAL ===================== -->
+    <section id="tab-historial" class="tab-content">
+      <h2>Historial de Movimientos</h2>
+      <p class="help-text">
+        Aquí aparecen, en orden, todas las recaudaciones y liquidaciones que se han
+        registrado (tanto las añadidas manualmente como las importadas desde correo).
+      </p>
+
+      <!-- Filtros (desplegable) -->
+      <button type="button" class="btn btn-secondary btn-toggle-filtros" data-target="filtrosHistorial">🔍 Filtros y orden</button>
+      <div class="filters" id="filtrosHistorial" style="display:none;">
+        <label>Tipo
+          <select id="filtroHistorialTipo">
+            <option value="todos">Todos</option>
+            <option value="recaudacion">Solo Recaudaciones</option>
+            <option value="liquidacion">Solo Liquidaciones</option>
+          </select>
+        </label>
+        <label>Buscar
+          <input type="text" id="filtroHistorialTexto" placeholder="Servicio, recibo, máquina..." />
+        </label>
+        <label>Ordenar por fecha
+          <select id="ordenHistorial">
+            <option value="desc">Más reciente primero</option>
+            <option value="asc">Más antiguo primero</option>
+          </select>
+        </label>
+      </div>
+
+      <!-- Tabla -->
+      <div class="table-wrapper">
+        <table id="tablaHistorial">
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Tipo</th>
+              <th>Detalle</th>
+              <th>Importe</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Generado dinámicamente -->
+          </tbody>
+        </table>
+      </div>
+      <p class="empty-msg" id="historialVacio" style="display:none;">No hay movimientos registrados todavía.</p>
+    </section>
+
+
+    <!-- ===================== PANTALLA: COPIAS DE SEGURIDAD ===================== -->
+    <section id="tab-backup" class="tab-content">
+      <h2>Copias de Seguridad</h2>
+
+      <div class="info-box">
+        <p>📅 <strong>Copia automática diaria:</strong> una vez al día, al abrir la app,
+        se generará y descargará automáticamente un archivo de copia de seguridad
+        (sustituye al del día anterior, siempre con el mismo nombre).</p>
+        <p id="estadoBackupAuto" style="margin-top:6px;"></p>
+      </div>
+
+      <div class="form-card">
+        <h3>Exportar datos</h3>
+        <p class="help-text">Descarga un archivo JSON con todas las recaudaciones y liquidaciones registradas.</p>
+        <button id="btnExportar" class="btn btn-primary">⬇️ Exportar datos (JSON)</button>
+      </div>
+
+      <div class="form-card">
+        <h3>Importar datos</h3>
+        <p class="help-text">
+          Restaura los datos desde un archivo JSON exportado previamente.
+          <strong>Atención:</strong> esta acción sustituirá los datos actuales.
+        </p>
+        <input type="file" id="inputImportarJSON" accept="application/json" />
+        <button id="btnImportar" class="btn btn-primary">⬆️ Importar datos</button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Notificaciones tipo "toast" -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Scripts -->
+  <script>
+/* =========================================================
+   APP.JS - Control de Recaudaciones y Liquidaciones TUSSAM
+   Aplicación 100% JavaScript Vanilla
+   Almacenamiento: IndexedDB (con respaldo en LocalStorage)
+   ========================================================= */
+
+/* =========================================================
+   1. CONFIGURACIÓN DE BASE DE DATOS (IndexedDB)
+   ========================================================= */
+
+var DB_NAME = "tussam_db";
+var DB_VERSION = 1;
+var STORE_RECAUDACIONES = "recaudaciones";
+var STORE_LIQUIDACIONES = "liquidaciones";
+
+var db = null; // referencia global a la base de datos
+
+/**
+ * Abre (o crea) la base de datos IndexedDB con los almacenes necesarios.
+ * Devuelve una Promise que se resuelve cuando la BD está lista.
+ */
+function abrirBaseDatos() {
+  return new Promise(function (resolve, reject) {
+    if (!window.indexedDB) {
+      // Si el navegador no soporta IndexedDB, usaremos LocalStorage como respaldo
+      resolve(null);
+      return;
+    }
+
+    var request = indexedDB.open(DB_NAME, DB_VERSION);
+
+    request.onupgradeneeded = function (event) {
+      var database = event.target.result;
+
+      if (!database.objectStoreNames.contains(STORE_RECAUDACIONES)) {
+        var storeRec = database.createObjectStore(STORE_RECAUDACIONES, {
+          keyPath: "id"
+        });
+        storeRec.createIndex("fecha", "fecha", { unique: false });
+        storeRec.createIndex("servicio", "servicio", { unique: false });
+      }
+
+      if (!database.objectStoreNames.contains(STORE_LIQUIDACIONES)) {
+        var storeLiq = database.createObjectStore(STORE_LIQUIDACIONES, {
+          keyPath: "id"
+        });
+        storeLiq.createIndex("fecha", "fecha", { unique: false });
+        storeLiq.createIndex("recibo", "recibo", { unique: false });
+      }
+    };
+
+    request.onsuccess = function (event) {
+      db = event.target.result;
+      resolve(db);
+    };
+
+    request.onerror = function () {
+      console.error("Error al abrir IndexedDB, se usará LocalStorage como respaldo.");
+      resolve(null);
+    };
+  });
+}
+
+/* =========================================================
+   2. CAPA DE ACCESO A DATOS (compatible IndexedDB / LocalStorage)
+   ========================================================= */
+
+/**
+ * Obtiene todos los registros de un almacén.
+ * Si IndexedDB no está disponible, lee de LocalStorage.
+ */
+function obtenerTodos(storeName) {
+  return new Promise(function (resolve) {
+    if (db) {
+      try {
+        var tx = db.transaction(storeName, "readonly");
+        var store = tx.objectStore(storeName);
+        var items = [];
+
+        var cursorRequest = store.openCursor();
+        cursorRequest.onsuccess = function (event) {
+          var cursor = event.target.result;
+          if (cursor) {
+            items.push(cursor.value);
+            cursor.continue();
+          } else {
+            // Si IndexedDB no devuelve nada pero hay datos guardados en
+            // LocalStorage (por ejemplo, por un fallo previo), los usamos.
+            if (items.length === 0) {
+              var local = leerLocalStorage(storeName);
+              resolve(local);
+            } else {
+              resolve(items);
+            }
+          }
+        };
+        cursorRequest.onerror = function (e) {
+          console.error("Error al leer IndexedDB:", e);
+          resolve(leerLocalStorage(storeName));
+        };
+      } catch (err) {
+        console.error("Excepción al leer IndexedDB:", err);
+        resolve(leerLocalStorage(storeName));
+      }
+    } else {
+      resolve(leerLocalStorage(storeName));
+    }
+  });
+}
+
+/**
+ * Guarda (crea o actualiza) un registro en el almacén indicado.
+ */
+function guardarRegistro(storeName, registro) {
+  // Guardamos siempre también en LocalStorage como copia de seguridad
+  // local, independientemente de si IndexedDB funciona o no. Esto evita
+  // que un fallo silencioso de IndexedDB (frecuente en file:// o Safari)
+  // haga "perder" un registro recién guardado.
+  guardarEnLocalStorage(storeName, registro);
+
+  return new Promise(function (resolve) {
+    if (db) {
+      try {
+        var tx = db.transaction(storeName, "readwrite");
+        var store = tx.objectStore(storeName);
+        store.put(registro);
+
+        tx.oncomplete = function () {
+          resolve(true);
+        };
+        tx.onerror = function (e) {
+          console.error("Error al guardar en IndexedDB:", e);
+          resolve(true);
+        };
+      } catch (err) {
+        console.error("Excepción al guardar en IndexedDB:", err);
+        resolve(true);
+      }
+    } else {
+      resolve(true);
+    }
+  });
+}
+
+/**
+ * Elimina un registro por su id.
+ */
+function eliminarRegistro(storeName, id) {
+  eliminarDeLocalStorage(storeName, id);
+
+  return new Promise(function (resolve) {
+    if (db) {
+      try {
+        var tx = db.transaction(storeName, "readwrite");
+        var store = tx.objectStore(storeName);
+        store.delete(id);
+
+        tx.oncomplete = function () {
+          resolve(true);
+        };
+        tx.onerror = function (e) {
+          console.error("Error al eliminar en IndexedDB:", e);
+          resolve(true);
+        };
+      } catch (err) {
+        console.error("Excepción al eliminar en IndexedDB:", err);
+        resolve(true);
+      }
+    } else {
+      resolve(true);
+    }
+  });
+}
+
+/**
+ * Reemplaza por completo el contenido de un almacén (usado al importar copias de seguridad).
+ */
+function reemplazarTodos(storeName, registros) {
+  return new Promise(function (resolve) {
+    if (db) {
+      var tx = db.transaction(storeName, "readwrite");
+      var store = tx.objectStore(storeName);
+      store.clear();
+
+      registros.forEach(function (item) {
+        store.put(item);
+      });
+
+      tx.oncomplete = function () {
+        resolve(true);
+      };
+      tx.onerror = function () {
+        resolve(false);
+      };
+    } else {
+      localStorage.setItem("tussam_" + storeName, JSON.stringify(registros));
+      resolve(true);
+    }
+  });
+}
+
+/* ---- Funciones de respaldo con LocalStorage ---- */
+
+function leerLocalStorage(storeName) {
+  var raw = localStorage.getItem("tussam_" + storeName);
+  return raw ? JSON.parse(raw) : [];
+}
+
+function guardarEnLocalStorage(storeName, registro) {
+  var items = leerLocalStorage(storeName);
+  var index = items.findIndex(function (i) { return i.id === registro.id; });
+
+  if (index >= 0) {
+    items[index] = registro;
+  } else {
+    items.push(registro);
+  }
+
+  localStorage.setItem("tussam_" + storeName, JSON.stringify(items));
+}
+
+function eliminarDeLocalStorage(storeName, id) {
+  var items = leerLocalStorage(storeName);
+  items = items.filter(function (i) { return i.id !== id; });
+  localStorage.setItem("tussam_" + storeName, JSON.stringify(items));
+}
+
+/* =========================================================
+   3. UTILIDADES GENERALES
+   ========================================================= */
+
+/**
+ * Genera un identificador único basado en la fecha actual y un número aleatorio.
+ */
+function generarId() {
+  return Date.now().toString(36) + "_" + Math.random().toString(36).substr(2, 9);
+}
+
+/**
+ * Formatea un número como moneda en euros (formato español).
+ */
+function formatearMoneda(numero) {
+  var valor = parseFloat(numero);
+  if (isNaN(valor)) valor = 0;
+  return valor.toLocaleString("es-ES", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }) + " €";
+}
+
+/**
+ * Convierte una fecha en formato YYYY-MM-DD a DD/MM/YYYY para mostrar al usuario.
+ */
+function formatearFecha(fechaISO) {
+  if (!fechaISO) return "";
+  var partes = fechaISO.split("-");
+  if (partes.length !== 3) return fechaISO;
+  return partes[2] + "/" + partes[1] + "/" + partes[0];
+}
+
+/**
+ * Devuelve la fecha actual en formato YYYY-MM-DD (para inputs type="date").
+ */
+function fechaHoyISO() {
+  var hoy = new Date();
+  var mes = (hoy.getMonth() + 1).toString().padStart(2, "0");
+  var dia = hoy.getDate().toString().padStart(2, "0");
+  return hoy.getFullYear() + "-" + mes + "-" + dia;
+}
+
+/**
+ * Muestra una notificación tipo "toast" en la parte inferior de la pantalla.
+ */
+function mostrarToast(mensaje, tipo) {
+  var toast = document.getElementById("toast");
+  toast.textContent = mensaje;
+  toast.className = "toast show" + (tipo ? " " + tipo : "");
+
+  setTimeout(function () {
+    toast.className = "toast";
+  }, 2500);
+}
+
+/**
+ * Escapa caracteres HTML para evitar inyección al insertar texto dinámico.
+ */
+function escaparHTML(texto) {
+  if (texto === null || texto === undefined) return "";
+  return String(texto)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/**
+ * Pide confirmación antes de realizar una acción destructiva (como borrar),
+ * sin depender de la función confirm() del navegador (que puede estar
+ * bloqueada o no funcionar correctamente en algunos navegadores/webviews).
+ *
+ * La primera vez que se pulsa el botón, este cambia su texto a "¿Seguro?"
+ * durante unos segundos. Si se vuelve a pulsar en ese tiempo, se ejecuta
+ * la acción. Si no, el botón vuelve a su estado normal.
+ */
+function confirmarAccion(boton, textoOriginal, accion) {
+  if (boton.getAttribute("data-confirmando") === "true") {
+    // Segunda pulsación: confirmado, ejecutar la acción
+    boton.removeAttribute("data-confirmando");
+    boton.textContent = textoOriginal;
+    accion();
+  } else {
+    // Primera pulsación: pedir confirmación
+    boton.setAttribute("data-confirmando", "true");
+    boton.textContent = "✅ ¿Seguro?";
+
+    setTimeout(function () {
+      if (boton.getAttribute("data-confirmando") === "true") {
+        boton.removeAttribute("data-confirmando");
+        boton.textContent = textoOriginal;
+      }
+    }, 3000);
+  }
+}
+
+/* =========================================================
+   4. ESTADO GLOBAL DE LA APLICACIÓN
+   ========================================================= */
+
+var listaRecaudaciones = [];
+var listaLiquidaciones = [];
+
+var editandoRecaudacionId = null;
+var editandoLiquidacionId = null;
+
+/* =========================================================
+   5. NAVEGACIÓN ENTRE PESTAÑAS
+   ========================================================= */
+
+function inicializarTabs() {
+  var botones = document.querySelectorAll(".tab-btn");
+
+  botones.forEach(function (boton) {
+    boton.addEventListener("click", function () {
+      var tabId = boton.getAttribute("data-tab");
+      cambiarTab(tabId);
+    });
+  });
+}
+
+/**
+ * Inicializa los botones que muestran/ocultan los paneles de filtros
+ * (búsqueda y orden), que permanecen ocultos por defecto y solo se
+ * despliegan cuando el usuario los necesita.
+ */
+function inicializarTogglesFiltros() {
+  var botones = document.querySelectorAll(".btn-toggle-filtros");
+
+  botones.forEach(function (boton) {
+    boton.addEventListener("click", function () {
+      var targetId = boton.getAttribute("data-target");
+      var panel = document.getElementById(targetId);
+      if (!panel) return;
+
+      var visible = panel.style.display !== "none";
+
+      if (visible) {
+        panel.style.display = "none";
+        boton.classList.remove("activo");
+      } else {
+        panel.style.display = "flex";
+        boton.classList.add("activo");
+      }
+    });
+  });
+}
+
+function cambiarTab(tabId) {
+  document.querySelectorAll(".tab-btn").forEach(function (b) {
+    b.classList.remove("active");
+  });
+  document.querySelectorAll(".tab-content").forEach(function (c) {
+    c.classList.remove("active");
+  });
+
+  document.querySelector('.tab-btn[data-tab="' + tabId + '"]').classList.add("active");
+  document.getElementById("tab-" + tabId).classList.add("active");
+
+  if (tabId === "estadillo") {
+    renderizarEstadillo();
+  }
+
+  if (tabId === "historial") {
+    renderizarHistorial();
+  }
+}
+
+/* =========================================================
+   6. MODO OSCURO / CLARO
+   ========================================================= */
+
+function inicializarTema() {
+  var temaGuardado = localStorage.getItem("tussam_tema");
+  if (temaGuardado === "dark") {
+    document.body.classList.add("dark");
+    document.getElementById("btnTheme").textContent = "☀️";
+  }
+
+  document.getElementById("btnTheme").addEventListener("click", function () {
+    document.body.classList.toggle("dark");
+    var esOscuro = document.body.classList.contains("dark");
+    localStorage.setItem("tussam_tema", esOscuro ? "dark" : "light");
+    document.getElementById("btnTheme").textContent = esOscuro ? "☀️" : "🌙";
+  });
+}
+
+/* =========================================================
+   7. MÓDULO DE RECAUDACIONES
+   ========================================================= */
+
+/**
+ * Carga las recaudaciones desde la base de datos al estado global.
+ */
+function cargarRecaudaciones() {
+  return obtenerTodos(STORE_RECAUDACIONES).then(function (items) {
+    listaRecaudaciones = items;
+    renderizarRecaudaciones();
+    actualizarResumen();
+  });
+}
+
+/**
+ * Renderiza la tabla de recaudaciones aplicando los filtros y orden activos.
+ */
+function renderizarRecaudaciones() {
+  var tbody = document.querySelector("#tablaRecaudaciones tbody");
+  var vacioMsg = document.getElementById("recVacio");
+
+  var filtroFecha = document.getElementById("filtroRecFecha").value;
+  var filtroServicio = document.getElementById("filtroRecServicio").value.trim().toLowerCase();
+  var orden = document.getElementById("ordenRecFecha").value;
+
+  // Filtrado
+  var datos = listaRecaudaciones.filter(function (item) {
+    var coincideFecha = !filtroFecha || item.fecha === filtroFecha;
+    var coincideServicio = !filtroServicio || item.servicio.toLowerCase().indexOf(filtroServicio) !== -1;
+    return coincideFecha && coincideServicio;
+  });
+
+  // Orden por fecha
+  datos.sort(function (a, b) {
+    if (a.fecha === b.fecha) return 0;
+    if (orden === "asc") {
+      return a.fecha < b.fecha ? -1 : 1;
+    } else {
+      return a.fecha > b.fecha ? -1 : 1;
+    }
+  });
+
+  tbody.innerHTML = "";
+
+  if (datos.length === 0) {
+    vacioMsg.style.display = "block";
+  } else {
+    vacioMsg.style.display = "none";
+  }
+
+  datos.forEach(function (item) {
+    var tr = document.createElement("tr");
+    tr.innerHTML =
+      "<td>" + formatearFecha(item.fecha) + "</td>" +
+      "<td>" + escaparHTML(item.servicio) + "</td>" +
+      "<td>" + formatearMoneda(item.parte1) + "</td>" +
+      "<td>" + formatearMoneda(item.parte2) + "</td>" +
+      "<td><strong>" + formatearMoneda(item.total) + "</strong></td>" +
+      "<td>" +
+        '<button class="btn-sm btn-edit" data-action="editar-rec" data-id="' + item.id + '">✏️</button>' +
+        '<button class="btn-sm btn-danger" data-action="eliminar-rec" data-id="' + item.id + '">🗑️</button>' +
+      "</td>";
+    tbody.appendChild(tr);
+  });
+
+  // Asignar eventos a los botones recién creados
+  tbody.querySelectorAll('[data-action="editar-rec"]').forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      editarRecaudacion(btn.getAttribute("data-id"));
+    });
+  });
+
+  tbody.querySelectorAll('[data-action="eliminar-rec"]').forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      confirmarAccion(btn, "🗑️", function () {
+        eliminarRecaudacion(btn.getAttribute("data-id"));
+      });
+    });
+  });
+}
+
+/**
+ * Calcula automáticamente el total = parte1 + parte2 en el formulario.
+ */
+function actualizarTotalRecaudacion() {
+  var p1 = parseFloat(document.getElementById("recParte1").value) || 0;
+  var p2 = parseFloat(document.getElementById("recParte2").value) || 0;
+  document.getElementById("recTotal").value = (p1 + p2).toFixed(2);
+}
+
+/**
+ * Rellena el formulario para editar una recaudación existente.
+ */
+function editarRecaudacion(id) {
+  var item = listaRecaudaciones.find(function (i) { return i.id === id; });
+  if (!item) return;
+
+  editandoRecaudacionId = id;
+  document.getElementById("recaudacionId").value = id;
+  document.getElementById("recFecha").value = item.fecha;
+  document.getElementById("recServicio").value = item.servicio;
+  document.getElementById("recParte1").value = item.parte1;
+  document.getElementById("recParte2").value = item.parte2;
+  document.getElementById("recTotal").value = item.total;
+
+  document.querySelector('.tab-btn[data-tab="recaudaciones"]').scrollIntoView({ behavior: "smooth" });
+  document.getElementById("formRecaudacion").scrollIntoView({ behavior: "smooth" });
+}
+
+/**
+ * Elimina una recaudación (la confirmación se gestiona antes de llamar a esta función).
+ */
+function eliminarRecaudacion(id) {
+  eliminarRegistro(STORE_RECAUDACIONES, id).then(function () {
+    listaRecaudaciones = listaRecaudaciones.filter(function (i) { return i.id !== id; });
+    renderizarRecaudaciones();
+    actualizarResumen();
+    mostrarToast("Recaudación eliminada", "success");
+  });
+}
+
+/**
+ * Restablece el formulario de recaudaciones a su estado inicial.
+ */
+function resetearFormRecaudacion() {
+  editandoRecaudacionId = null;
+  document.getElementById("formRecaudacion").reset();
+  document.getElementById("recaudacionId").value = "";
+  document.getElementById("recFecha").value = fechaHoyISO();
+  document.getElementById("recTotal").value = "0.00";
+}
+
+/**
+ * Inicializa eventos del módulo de recaudaciones.
+ */
+function inicializarRecaudaciones() {
+  document.getElementById("recFecha").value = fechaHoyISO();
+
+  document.getElementById("recParte1").addEventListener("input", actualizarTotalRecaudacion);
+  document.getElementById("recParte2").addEventListener("input", actualizarTotalRecaudacion);
+
+  document.getElementById("formRecaudacion").addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    var fecha = document.getElementById("recFecha").value;
+    var servicio = document.getElementById("recServicio").value.trim();
+    var parte1 = parseFloat(document.getElementById("recParte1").value) || 0;
+    var parte2 = parseFloat(document.getElementById("recParte2").value) || 0;
+    var total = parte1 + parte2;
+
+    if (!fecha || !servicio) {
+      mostrarToast("Por favor, completa todos los campos obligatorios.", "error");
+      return;
+    }
+
+    var registro = {
+      id: editandoRecaudacionId || generarId(),
+      fecha: fecha,
+      servicio: servicio,
+      parte1: parte1,
+      parte2: parte2,
+      total: total
+    };
+
+    guardarRegistro(STORE_RECAUDACIONES, registro).then(function () {
+      if (editandoRecaudacionId) {
+        var idx = listaRecaudaciones.findIndex(function (i) { return i.id === registro.id; });
+        listaRecaudaciones[idx] = registro;
+        mostrarToast("Recaudación actualizada correctamente", "success");
+      } else {
+        listaRecaudaciones.push(registro);
+        mostrarToast("Recaudación añadida correctamente", "success");
+      }
+
+      resetearFormRecaudacion();
+      renderizarRecaudaciones();
+      actualizarResumen();
+    });
+  });
+
+  document.getElementById("btnCancelarRec").addEventListener("click", resetearFormRecaudacion);
+
+  // Filtros
+  document.getElementById("filtroRecFecha").addEventListener("change", renderizarRecaudaciones);
+  document.getElementById("filtroRecServicio").addEventListener("input", renderizarRecaudaciones);
+  document.getElementById("ordenRecFecha").addEventListener("change", renderizarRecaudaciones);
+
+  document.getElementById("btnLimpiarFiltrosRec").addEventListener("click", function () {
+    document.getElementById("filtroRecFecha").value = "";
+    document.getElementById("filtroRecServicio").value = "";
+    document.getElementById("ordenRecFecha").value = "desc";
+    renderizarRecaudaciones();
+  });
+
+  resetearFormRecaudacion();
+}
+
+/* =========================================================
+   8. MÓDULO DE LIQUIDACIONES
+   ========================================================= */
+
+/**
+ * Carga las liquidaciones desde la base de datos al estado global.
+ */
+function cargarLiquidaciones() {
+  return obtenerTodos(STORE_LIQUIDACIONES).then(function (items) {
+    listaLiquidaciones = items;
+    renderizarLiquidaciones();
+    actualizarResumen();
+  });
+}
+
+/**
+ * Renderiza la tabla de liquidaciones aplicando filtros y orden.
+ */
+function renderizarLiquidaciones() {
+  var tbody = document.querySelector("#tablaLiquidaciones tbody");
+  var vacioMsg = document.getElementById("liqVacio");
+
+  var filtroTexto = document.getElementById("filtroLiq").value.trim().toLowerCase();
+  var orden = document.getElementById("ordenLiq").value;
+
+  var datos = listaLiquidaciones.filter(function (item) {
+    if (!filtroTexto) return true;
+    var enRecibo = item.recibo.toLowerCase().indexOf(filtroTexto) !== -1;
+    var enMaquina = item.maquina.toLowerCase().indexOf(filtroTexto) !== -1;
+    var enFecha = formatearFecha(item.fecha).indexOf(filtroTexto) !== -1;
+    return enRecibo || enMaquina || enFecha;
+  });
+
+  datos.sort(function (a, b) {
+    switch (orden) {
+      case "fecha-asc":
+        return a.fecha < b.fecha ? -1 : (a.fecha > b.fecha ? 1 : 0);
+      case "fecha-desc":
+        return a.fecha > b.fecha ? -1 : (a.fecha < b.fecha ? 1 : 0);
+      case "importe-asc":
+        return a.importe - b.importe;
+      case "importe-desc":
+        return b.importe - a.importe;
+      default:
+        return 0;
+    }
+  });
+
+  tbody.innerHTML = "";
+
+  if (datos.length === 0) {
+    vacioMsg.style.display = "block";
+  } else {
+    vacioMsg.style.display = "none";
+  }
+
+  datos.forEach(function (item) {
+    var tr = document.createElement("tr");
+    tr.innerHTML =
+      "<td>" + formatearFecha(item.fecha) + "</td>" +
+      "<td>" + escaparHTML(item.recibo) + "</td>" +
+      "<td>" + escaparHTML(item.maquina) + "</td>" +
+      "<td><strong>" + formatearMoneda(item.importe) + "</strong></td>" +
+      "<td>" +
+        '<button class="btn-sm btn-edit" data-action="editar-liq" data-id="' + item.id + '">✏️</button>' +
+        '<button class="btn-sm btn-danger" data-action="eliminar-liq" data-id="' + item.id + '">🗑️</button>' +
+      "</td>";
+    tbody.appendChild(tr);
+  });
+
+  tbody.querySelectorAll('[data-action="editar-liq"]').forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      editarLiquidacion(btn.getAttribute("data-id"));
+    });
+  });
+
+  tbody.querySelectorAll('[data-action="eliminar-liq"]').forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      confirmarAccion(btn, "🗑️", function () {
+        eliminarLiquidacion(btn.getAttribute("data-id"));
+      });
+    });
+  });
+}
+
+/**
+ * Rellena el formulario para editar una liquidación existente.
+ */
+function editarLiquidacion(id) {
+  var item = listaLiquidaciones.find(function (i) { return i.id === id; });
+  if (!item) return;
+
+  editandoLiquidacionId = id;
+  document.getElementById("liquidacionId").value = id;
+  document.getElementById("liqFecha").value = item.fecha;
+  document.getElementById("liqRecibo").value = item.recibo;
+  document.getElementById("liqMaquina").value = item.maquina;
+  document.getElementById("liqImporte").value = item.importe;
+
+  document.getElementById("formLiquidacion").scrollIntoView({ behavior: "smooth" });
+}
+
+/**
+ * Elimina una liquidación (la confirmación se gestiona antes de llamar a esta función).
+ */
+function eliminarLiquidacion(id) {
+  eliminarRegistro(STORE_LIQUIDACIONES, id).then(function () {
+    listaLiquidaciones = listaLiquidaciones.filter(function (i) { return i.id !== id; });
+    renderizarLiquidaciones();
+    actualizarResumen();
+    mostrarToast("Liquidación eliminada", "success");
+  });
+}
+
+/**
+ * Restablece el formulario de liquidaciones.
+ */
+function resetearFormLiquidacion() {
+  editandoLiquidacionId = null;
+  document.getElementById("formLiquidacion").reset();
+  document.getElementById("liquidacionId").value = "";
+  document.getElementById("liqFecha").value = fechaHoyISO();
+  document.getElementById("liqImporte").value = "0.00";
+}
+
+/**
+ * Inicializa eventos del módulo de liquidaciones.
+ */
+function inicializarLiquidaciones() {
+  document.getElementById("liqFecha").value = fechaHoyISO();
+
+  document.getElementById("formLiquidacion").addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    var fecha = document.getElementById("liqFecha").value;
+    var recibo = document.getElementById("liqRecibo").value.trim();
+    var maquina = document.getElementById("liqMaquina").value.trim();
+    var importe = parseFloat(document.getElementById("liqImporte").value) || 0;
+
+    if (!fecha || !recibo || !maquina) {
+      mostrarToast("Por favor, completa todos los campos obligatorios.", "error");
+      return;
+    }
+
+    var registro = {
+      id: editandoLiquidacionId || generarId(),
+      fecha: fecha,
+      recibo: recibo,
+      maquina: maquina,
+      importe: importe
+    };
+
+    guardarRegistro(STORE_LIQUIDACIONES, registro).then(function () {
+      if (editandoLiquidacionId) {
+        var idx = listaLiquidaciones.findIndex(function (i) { return i.id === registro.id; });
+        listaLiquidaciones[idx] = registro;
+        mostrarToast("Liquidación actualizada correctamente", "success");
+      } else {
+        listaLiquidaciones.push(registro);
+        mostrarToast("Liquidación añadida correctamente", "success");
+      }
+
+      resetearFormLiquidacion();
+      renderizarLiquidaciones();
+      actualizarResumen();
+    });
+  });
+
+  document.getElementById("btnCancelarLiq").addEventListener("click", resetearFormLiquidacion);
+
+  document.getElementById("filtroLiq").addEventListener("input", renderizarLiquidaciones);
+  document.getElementById("ordenLiq").addEventListener("change", renderizarLiquidaciones);
+
+  document.getElementById("btnLimpiarFiltrosLiq").addEventListener("click", function () {
+    document.getElementById("filtroLiq").value = "";
+    document.getElementById("ordenLiq").value = "fecha-desc";
+    renderizarLiquidaciones();
+  });
+
+  resetearFormLiquidacion();
+}
+
+/* =========================================================
+   9. RESUMEN GENERAL (PANTALLA DE INICIO)
+   ========================================================= */
+
+/**
+ * Recalcula y muestra los totales de recaudación, liquidación y saldo pendiente.
+ */
+function actualizarResumen() {
+  var totalRecaudado = listaRecaudaciones.reduce(function (acc, item) {
+    return acc + (parseFloat(item.total) || 0);
+  }, 0);
+
+  var totalLiquidado = listaLiquidaciones.reduce(function (acc, item) {
+    return acc + (parseFloat(item.importe) || 0);
+  }, 0);
+
+  var saldoPendiente = totalRecaudado - totalLiquidado;
+
+  document.getElementById("totalRecaudado").textContent = formatearMoneda(totalRecaudado);
+  document.getElementById("totalLiquidado").textContent = formatearMoneda(totalLiquidado);
+  document.getElementById("saldoPendiente").textContent = formatearMoneda(saldoPendiente);
+
+  var cardSaldo = document.getElementById("cardSaldo");
+  cardSaldo.classList.remove("positivo", "cero");
+
+  // Redondeamos a 2 decimales para evitar problemas de precisión flotante
+  var saldoRedondeado = Math.round(saldoPendiente * 100) / 100;
+
+  if (saldoRedondeado > 0) {
+    // Saldo positivo: dinero recaudado que aún debes entregar -> ROJO
+    cardSaldo.classList.add("positivo");
+  } else {
+    // Saldo cero o negativo (has liquidado de más, a tu favor) -> VERDE
+    cardSaldo.classList.add("cero");
+  }
+
+  // Si la pestaña de historial está abierta, la refrescamos también
+  var tabHistorial = document.getElementById("tab-historial");
+  if (tabHistorial && tabHistorial.classList.contains("active")) {
+    renderizarHistorial();
+  }
+}
+
+/* =========================================================
+   10. IMPORTACIÓN RÁPIDA DE LIQUIDACIONES (DESDE CORREO)
+   ========================================================= */
+
+/**
+ * Analiza un texto libre (correo electrónico) e intenta extraer:
+ * fecha, número de recibo, máquina e importe mediante expresiones regulares.
+ */
+function analizarTextoCorreo(texto) {
+  return extraerCamposTUSSAM(texto);
+}
+
+/**
+ * Extrae los campos del ticket TUSSAM a partir de texto (OCR o correo).
+ *
+ * Formato conocido del ticket:
+ *   Transaction: 190923
+ *   Recibo:      184686
+ *   Máquina:     201907010007
+ *   Fecha:       28/04/26
+ *   Total:       EUR 112,00
+ */
+function extraerCamposTUSSAM(texto) {
+  var resultado = {
+    fecha: "",
+    recibo: "",
+    maquina: "",
+    importe: ""
+  };
+
+  // --- RECIBO ---
+  // Línea "Recibo: 184686" o "Recibo : 184686"
+  var mRecibo = texto.match(/recibo\s*[:\-]?\s*(\d+)/i);
+  if (mRecibo) {
+    resultado.recibo = mRecibo[1].trim();
+  }
+
+  // --- MÁQUINA ---
+  // Línea "Máquina: 201907010007"
+  var mMaquina = texto.match(/m[aá]quina\s*[:\-]?\s*([\w\-]+)/i);
+  if (mMaquina) {
+    resultado.maquina = mMaquina[1].trim();
+  }
+
+  // --- FECHA ---
+  // Formato "Fecha: 28/04/26" (DD/MM/AA o DD/MM/AAAA)
+  // También acepta DD-MM-AA, DD/MM/YYYY, YYYY-MM-DD
+  var mFecha = texto.match(/fecha\s*[:\-]?\s*(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/i);
+  if (mFecha) {
+    var dia = mFecha[1].padStart(2, "0");
+    var mes = mFecha[2].padStart(2, "0");
+    var anio = mFecha[3];
+    // Si el año viene en formato corto (26 → 2026)
+    if (anio.length === 2) {
+      anio = "20" + anio;
+    }
+    resultado.fecha = anio + "-" + mes + "-" + dia;
+  } else {
+    // Fallback: cualquier fecha DD/MM/AA o DD/MM/YYYY sin etiqueta
+    var mFecha2 = texto.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/);
+    if (mFecha2) {
+      var dia2 = mFecha2[1].padStart(2, "0");
+      var mes2 = mFecha2[2].padStart(2, "0");
+      var anio2 = mFecha2[3];
+      if (anio2.length === 2) anio2 = "20" + anio2;
+      resultado.fecha = anio2 + "-" + mes2 + "-" + dia2;
+    }
+  }
+
+  // --- IMPORTE TOTAL ---
+  // Línea "Total: EUR 112,00" o "Total: EUR 112.00"
+  // Primero busca la línea específica "Total:" (no "Total monedas" ni "Total billetes")
+  var mTotal = texto.match(/^total\s*[:\-]?\s*(?:eur)?\s*([\d.,]+)/im);
+  if (mTotal) {
+    resultado.importe = normalizarImporte(mTotal[1]);
+  } else {
+    // Fallback: "EUR 112,00" al final de línea
+    var mEur = texto.match(/eur\s+([\d.,]+)\s*$/im);
+    if (mEur) {
+      resultado.importe = normalizarImporte(mEur[1]);
+    }
+  }
+
+  return resultado;
+}
+
+/**
+ * Convierte un importe en texto (ej: "112,00" o "112.00") a número decimal estándar.
+ */
+function normalizarImporte(texto) {
+  // Si tiene coma como separador decimal (formato español): 112,00 → 112.00
+  // Si tiene punto de miles y coma decimal: 1.234,56 → 1234.56
+  var limpio = texto.trim();
+  if (limpio.indexOf(",") !== -1) {
+    limpio = limpio.replace(/\./g, "").replace(",", ".");
+  }
+  var num = parseFloat(limpio);
+  return isNaN(num) ? "" : num.toFixed(2);
+}
+
+/**
+ * Inicializa el módulo de importación rápida desde correo.
+ */
+function inicializarImportarCorreo() {
+  document.getElementById("btnAnalizarCorreo").addEventListener("click", function () {
+    var texto = document.getElementById("textoCorreo").value.trim();
+
+    if (!texto) {
+      mostrarToast("Pega primero el texto del correo.", "error");
+      return;
+    }
+
+    var datos = analizarTextoCorreo(texto);
+
+    document.getElementById("impFecha").value = datos.fecha || fechaHoyISO();
+    document.getElementById("impRecibo").value = datos.recibo || "";
+    document.getElementById("impMaquina").value = datos.maquina || "";
+    document.getElementById("impImporte").value = datos.importe || "";
+
+    document.getElementById("resultadoAnalisis").style.display = "block";
+
+    // Avisar al usuario de qué campos no se detectaron
+    var faltantes = [];
+    if (!datos.fecha) faltantes.push("fecha");
+    if (!datos.recibo) faltantes.push("número de recibo");
+    if (!datos.maquina) faltantes.push("máquina");
+    if (!datos.importe) faltantes.push("importe");
+
+    if (faltantes.length > 0) {
+      mostrarToast("No se detectó: " + faltantes.join(", ") + ". Complétalo manualmente.", "error");
+    } else {
+      mostrarToast("Datos detectados correctamente. Revisa antes de guardar.", "success");
+    }
+
+    document.getElementById("resultadoAnalisis").scrollIntoView({ behavior: "smooth" });
+  });
+
+  document.getElementById("btnLimpiarCorreo").addEventListener("click", function () {
+    document.getElementById("textoCorreo").value = "";
+    document.getElementById("resultadoAnalisis").style.display = "none";
+  });
+
+  document.getElementById("btnCancelarImportado").addEventListener("click", function () {
+    document.getElementById("resultadoAnalisis").style.display = "none";
+    document.getElementById("textoCorreo").value = "";
+  });
+
+  document.getElementById("btnGuardarImportado").addEventListener("click", function () {
+    var fecha = document.getElementById("impFecha").value;
+    var recibo = document.getElementById("impRecibo").value.trim();
+    var maquina = document.getElementById("impMaquina").value.trim();
+    var importe = parseFloat(document.getElementById("impImporte").value);
+
+    if (!fecha || !recibo || !maquina || isNaN(importe)) {
+      mostrarToast("Completa todos los campos antes de guardar.", "error");
+      return;
+    }
+
+    var registro = {
+      id: generarId(),
+      fecha: fecha,
+      recibo: recibo,
+      maquina: maquina,
+      importe: importe
+    };
+
+    guardarRegistro(STORE_LIQUIDACIONES, registro).then(function () {
+      listaLiquidaciones.push(registro);
+      renderizarLiquidaciones();
+      actualizarResumen();
+
+      mostrarToast("Liquidación importada y guardada correctamente", "success");
+
+      // Limpiar formulario de importación
+      document.getElementById("textoCorreo").value = "";
+      document.getElementById("resultadoAnalisis").style.display = "none";
+    });
+  });
+}
+
+/* =========================================================
+   11. ESTADILLO DE MONEDAS Y BILLETES
+   ========================================================= */
+
+// Valores de monedas y billetes a mostrar en el estadillo (en euros)
+var VALORES_ESTADILLO = [0.10, 0.20, 0.50, 1, 2, 5, 10, 20, 50];
+
+// Clave usada para guardar las cantidades del estadillo en LocalStorage
+var ESTADILLO_KEY = "tussam_estadillo";
+
+/**
+ * Devuelve una etiqueta legible para cada valor (céntimos o euros).
+ */
+function etiquetaValorEstadillo(valor) {
+  if (valor < 1) {
+    return (valor * 100).toFixed(0) + " céntimos";
+  }
+  return valor + " €";
+}
+
+/**
+ * Carga las cantidades guardadas del estadillo desde LocalStorage.
+ */
+function cargarCantidadesEstadillo() {
+  var raw = localStorage.getItem(ESTADILLO_KEY);
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw);
+  } catch (err) {
+    return {};
+  }
+}
+
+/**
+ * Guarda las cantidades actuales del estadillo en LocalStorage.
+ */
+function guardarCantidadesEstadillo(cantidades) {
+  localStorage.setItem(ESTADILLO_KEY, JSON.stringify(cantidades));
+}
+
+/**
+ * Renderiza la tabla del estadillo con un input de cantidad por cada valor
+ * y calcula el subtotal de cada fila y el total general.
+ */
+function renderizarEstadillo() {
+  var tbody = document.querySelector("#tablaEstadillo tbody");
+  var cantidades = cargarCantidadesEstadillo();
+
+  tbody.innerHTML = "";
+
+  VALORES_ESTADILLO.forEach(function (valor) {
+    var cantidad = cantidades[valor] || 0;
+    var subtotal = valor * cantidad;
+    var valorMostrado = cantidad === 0 ? "" : cantidad;
+
+    var tr = document.createElement("tr");
+    tr.innerHTML =
+      "<td><strong>" + etiquetaValorEstadillo(valor) + "</strong></td>" +
+      '<td><input type="number" min="0" step="1" class="estadillo-input" data-valor="' + valor + '" value="' + valorMostrado + '" placeholder="0" /></td>' +
+      '<td class="estadillo-subtotal" data-valor="' + valor + '">' + formatearMoneda(subtotal) + "</td>";
+    tbody.appendChild(tr);
+  });
+
+  // Asignar evento a cada input de cantidad
+  tbody.querySelectorAll(".estadillo-input").forEach(function (input) {
+    input.addEventListener("input", function () {
+      actualizarEstadillo();
+    });
+  });
+
+  actualizarTotalEstadillo();
+}
+
+/**
+ * Recalcula los subtotales y el total general del estadillo,
+ * y guarda las cantidades introducidas.
+ */
+function actualizarEstadillo() {
+  var cantidades = {};
+  var tbody = document.querySelector("#tablaEstadillo tbody");
+
+  tbody.querySelectorAll(".estadillo-input").forEach(function (input) {
+    var valor = parseFloat(input.getAttribute("data-valor"));
+    var cantidad = parseInt(input.value, 10) || 0;
+    cantidades[valor] = cantidad;
+
+    var subtotal = valor * cantidad;
+    var celdaSubtotal = tbody.querySelector('.estadillo-subtotal[data-valor="' + valor + '"]');
+    if (celdaSubtotal) {
+      celdaSubtotal.textContent = formatearMoneda(subtotal);
+    }
+  });
+
+  guardarCantidadesEstadillo(cantidades);
+  actualizarTotalEstadillo();
+}
+
+/**
+ * Calcula y muestra el total general del estadillo.
+ */
+function actualizarTotalEstadillo() {
+  var cantidades = cargarCantidadesEstadillo();
+  var total = 0;
+
+  VALORES_ESTADILLO.forEach(function (valor) {
+    var cantidad = cantidades[valor] || 0;
+    total += valor * cantidad;
+  });
+
+  document.getElementById("totalEstadillo").textContent = formatearMoneda(total);
+}
+
+/**
+ * Inicializa el módulo de estadillo de monedas y billetes.
+ */
+function inicializarEstadillo() {
+  renderizarEstadillo();
+
+  document.getElementById("btnLimpiarEstadillo").addEventListener("click", function () {
+    localStorage.removeItem(ESTADILLO_KEY);
+    renderizarEstadillo();
+    mostrarToast("Estadillo vaciado", "success");
+  });
+}
+
+/* =========================================================
+   11.1 HISTORIAL DE MOVIMIENTOS (Recaudaciones + Liquidaciones)
+   ========================================================= */
+
+/**
+ * Construye una lista combinada de recaudaciones y liquidaciones,
+ * marcando el tipo de cada movimiento, para mostrarla en el historial.
+ */
+function obtenerHistorialCombinado() {
+  var movimientos = [];
+
+  listaRecaudaciones.forEach(function (item) {
+    movimientos.push({
+      tipo: "recaudacion",
+      fecha: item.fecha,
+      detalle: item.servicio,
+      importe: item.total
+    });
+  });
+
+  listaLiquidaciones.forEach(function (item) {
+    movimientos.push({
+      tipo: "liquidacion",
+      fecha: item.fecha,
+      detalle: "Recibo " + item.recibo + " · Máquina " + item.maquina,
+      importe: item.importe
+    });
+  });
+
+  return movimientos;
+}
+
+/**
+ * Renderiza la tabla del historial aplicando los filtros de tipo,
+ * texto y orden seleccionados.
+ */
+function renderizarHistorial() {
+  var tbody = document.querySelector("#tablaHistorial tbody");
+  var vacioMsg = document.getElementById("historialVacio");
+
+  var filtroTipo = document.getElementById("filtroHistorialTipo").value;
+  var filtroTexto = document.getElementById("filtroHistorialTexto").value.trim().toLowerCase();
+  var orden = document.getElementById("ordenHistorial").value;
+
+  var movimientos = obtenerHistorialCombinado();
+
+  // Filtrado por tipo
+  if (filtroTipo !== "todos") {
+    movimientos = movimientos.filter(function (m) {
+      return m.tipo === filtroTipo;
+    });
+  }
+
+  // Filtrado por texto (detalle)
+  if (filtroTexto) {
+    movimientos = movimientos.filter(function (m) {
+      return m.detalle.toLowerCase().indexOf(filtroTexto) !== -1;
+    });
+  }
+
+  // Orden por fecha
+  movimientos.sort(function (a, b) {
+    if (a.fecha === b.fecha) return 0;
+    if (orden === "asc") {
+      return a.fecha < b.fecha ? -1 : 1;
+    } else {
+      return a.fecha > b.fecha ? -1 : 1;
+    }
+  });
+
+  tbody.innerHTML = "";
+
+  if (movimientos.length === 0) {
+    vacioMsg.style.display = "block";
+  } else {
+    vacioMsg.style.display = "none";
+  }
+
+  movimientos.forEach(function (m) {
+    var etiquetaTipo = m.tipo === "recaudacion" ? "💰 Recaudación" : "🧾 Liquidación";
+
+    var tr = document.createElement("tr");
+    tr.innerHTML =
+      "<td>" + formatearFecha(m.fecha) + "</td>" +
+      "<td>" + etiquetaTipo + "</td>" +
+      "<td>" + escaparHTML(m.detalle) + "</td>" +
+      "<td><strong>" + formatearMoneda(m.importe) + "</strong></td>";
+    tbody.appendChild(tr);
+  });
+}
+
+/**
+ * Inicializa los eventos del módulo de historial.
+ */
+function inicializarHistorial() {
+  document.getElementById("filtroHistorialTipo").addEventListener("change", renderizarHistorial);
+  document.getElementById("filtroHistorialTexto").addEventListener("input", renderizarHistorial);
+  document.getElementById("ordenHistorial").addEventListener("change", renderizarHistorial);
+}
+
+/* =========================================================
+   12. COPIAS DE SEGURIDAD (EXPORTAR / IMPORTAR JSON)
+   ========================================================= */
+
+/**
+ * Genera y descarga el archivo de copia de seguridad con todos los datos.
+ * @param {string} nombreArchivo - nombre del archivo a descargar.
+ * @param {boolean} mostrarAviso - si se debe mostrar un toast de confirmación.
+ */
+function exportarDatosArchivo(nombreArchivo, mostrarAviso) {
+  var datos = {
+    version: 1,
+    fechaExportacion: new Date().toISOString(),
+    recaudaciones: listaRecaudaciones,
+    liquidaciones: listaLiquidaciones
+  };
+
+  var json = JSON.stringify(datos, null, 2);
+  var blob = new Blob([json], { type: "application/json" });
+  var url = URL.createObjectURL(blob);
+
+  var enlace = document.createElement("a");
+  enlace.href = url;
+  enlace.download = nombreArchivo;
+
+  document.body.appendChild(enlace);
+  enlace.click();
+  document.body.removeChild(enlace);
+
+  URL.revokeObjectURL(url);
+
+  if (mostrarAviso) {
+    mostrarToast("Copia de seguridad exportada correctamente", "success");
+  }
+}
+
+/**
+ * Exporta todos los datos (recaudaciones y liquidaciones) a un archivo JSON descargable.
+ * Usado por el botón manual "Exportar datos".
+ */
+function exportarDatos() {
+  var fechaArchivo = fechaHoyISO();
+  exportarDatosArchivo("tussam_backup_" + fechaArchivo + ".json", true);
+}
+
+/**
+ * Importa datos desde un archivo JSON, reemplazando los datos actuales.
+ */
+function importarDatos(archivo) {
+  if (!archivo) {
+    mostrarToast("Selecciona primero un archivo JSON.", "error");
+    return;
+  }
+
+  var lector = new FileReader();
+
+  lector.onload = function (event) {
+    try {
+      var datos = JSON.parse(event.target.result);
+
+      if (!datos.recaudaciones || !datos.liquidaciones) {
+        mostrarToast("El archivo no tiene el formato esperado.", "error");
+        return;
+      }
+
+      Promise.all([
+        reemplazarTodos(STORE_RECAUDACIONES, datos.recaudaciones),
+        reemplazarTodos(STORE_LIQUIDACIONES, datos.liquidaciones)
+      ]).then(function () {
+        listaRecaudaciones = datos.recaudaciones;
+        listaLiquidaciones = datos.liquidaciones;
+
+        renderizarRecaudaciones();
+        renderizarLiquidaciones();
+        actualizarResumen();
+
+        mostrarToast("Datos importados correctamente", "success");
+      });
+
+    } catch (err) {
+      console.error(err);
+      mostrarToast("Error al leer el archivo JSON.", "error");
+    }
+  };
+
+  lector.readAsText(archivo);
+}
+
+/**
+ * Inicializa los eventos del módulo de copias de seguridad.
+ */
+function inicializarBackup() {
+  document.getElementById("btnExportar").addEventListener("click", exportarDatos);
+
+  document.getElementById("btnImportar").addEventListener("click", function (e) {
+    var boton = e.currentTarget;
+    var input = document.getElementById("inputImportarJSON");
+    var archivo = input.files[0];
+
+    if (!archivo) {
+      mostrarToast("Selecciona primero un archivo JSON.", "error");
+      return;
+    }
+
+    confirmarAccion(boton, "⬆️ Importar datos", function () {
+      importarDatos(archivo);
+      input.value = "";
+    });
+  });
+
+  mostrarEstadoBackupAuto();
+}
+
+/* =========================================================
+   12.1 COPIA DE SEGURIDAD AUTOMÁTICA DIARIA
+   ========================================================= */
+
+// Clave usada para guardar la fecha de la última copia automática
+var BACKUP_AUTO_KEY = "tussam_ultimo_backup_auto";
+
+// Nombre fijo del archivo de copia automática (siempre el mismo,
+// para que al descargarse varias veces sustituya al anterior)
+var BACKUP_AUTO_NOMBRE = "tussam_backup_automatico.json";
+
+/**
+ * Comprueba si ya se ha hecho la copia de seguridad automática hoy.
+ * Si no se ha hecho, genera y descarga el archivo de backup.
+ */
+function comprobarBackupAutomatico() {
+  var hoy = fechaHoyISO();
+  var ultimoBackup = localStorage.getItem(BACKUP_AUTO_KEY);
+
+  if (ultimoBackup === hoy) {
+    // La copia de hoy ya se generó, no se vuelve a hacer
+    return;
+  }
+
+  // No mostramos toast para no interrumpir, solo se descarga el archivo
+  exportarDatosArchivo(BACKUP_AUTO_NOMBRE, false);
+
+  localStorage.setItem(BACKUP_AUTO_KEY, hoy);
+  mostrarToast("Copia de seguridad automática del día descargada", "success");
+  mostrarEstadoBackupAuto();
+}
+
+/**
+ * Muestra en la pestaña de copias de seguridad la fecha de la última
+ * copia automática realizada.
+ */
+function mostrarEstadoBackupAuto() {
+  var elemento = document.getElementById("estadoBackupAuto");
+  if (!elemento) return;
+
+  var ultimoBackup = localStorage.getItem(BACKUP_AUTO_KEY);
+
+  if (ultimoBackup) {
+    elemento.textContent = "Última copia automática: " + formatearFecha(ultimoBackup);
+  } else {
+    elemento.textContent = "Todavía no se ha generado ninguna copia automática.";
+  }
+}
+
+/* =========================================================
+   13. SERVICE WORKER (PWA)
+   ========================================================= */
+
+
+/* =========================================================
+   14. INICIALIZACIÓN GENERAL DE LA APLICACIÓN
+   ========================================================= */
+
+/* =========================================================
+   15. ESCÁNER DE TICKET CON CÁMARA (Google Cloud Vision OCR)
+   Gratuito hasta 1.000 fotos/mes. La clave API se guarda
+   únicamente en el dispositivo del usuario (LocalStorage).
+   ========================================================= */
+
+var GOOGLE_VISION_KEY_STORAGE = "tussam_google_vision_key";
+
+/**
+ * Devuelve la clave API de Google Vision guardada, o null si no hay ninguna.
+ */
+function obtenerApiKeyGoogle() {
+  return localStorage.getItem(GOOGLE_VISION_KEY_STORAGE) || null;
+}
+
+/**
+ * Guarda la clave API de Google Vision en LocalStorage.
+ */
+function guardarApiKeyGoogle(clave) {
+  localStorage.setItem(GOOGLE_VISION_KEY_STORAGE, clave.trim());
+}
+
+/**
+ * Convierte una imagen (dataURL base64) en texto usando la API de
+ * Google Cloud Vision (método DOCUMENT_TEXT_DETECTION, optimizado
+ * para documentos impresos como tickets de máquina).
+ *
+ * @param {string} imagenBase64 - dataURL completo (data:image/jpeg;base64,...)
+ * @param {string} apiKey       - Clave API de Google Cloud Vision
+ * @returns {Promise<string>}   - Texto extraído de la imagen
+ */
+function leerTicketConGoogleVision(imagenBase64, apiKey) {
+  // Google Vision necesita solo la parte base64, sin el prefijo data:image/...
+  var base64puro = imagenBase64.split(",")[1];
+
+  var url = "https://vision.googleapis.com/v1/images:annotate?key=" + apiKey;
+
+  var cuerpo = {
+    requests: [
+      {
+        image: { content: base64puro },
+        features: [
+          {
+            // DOCUMENT_TEXT_DETECTION es más preciso que TEXT_DETECTION
+            // para texto de impresoras térmicas (tickets)
+            type: "DOCUMENT_TEXT_DETECTION",
+            maxResults: 1
+          }
+        ],
+        imageContext: {
+          languageHints: ["es", "en"]
+        }
+      }
+    ]
+  };
+
+  return fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(cuerpo)
+  })
+  .then(function (respuesta) {
+    if (!respuesta.ok) {
+      return respuesta.json().then(function (err) {
+        var msg = (err.error && err.error.message) ? err.error.message : "Error desconocido";
+        throw new Error("Google Vision: " + msg);
+      });
+    }
+    return respuesta.json();
+  })
+  .then(function (datos) {
+    var anotacion = datos.responses &&
+                    datos.responses[0] &&
+                    datos.responses[0].fullTextAnnotation;
+
+    if (!anotacion || !anotacion.text) {
+      throw new Error("No se detectó texto en la imagen.");
+    }
+
+    return anotacion.text;
+  });
+}
+
+/**
+ * Inicializa el módulo de cámara y OCR en la pestaña de liquidaciones.
+ */
+function inicializarCamaraOCR() {
+  var btnToggle      = document.getElementById("btnToggleCamara");
+  var areaCamara     = document.getElementById("areaCamara");
+  var bloqueApiKey   = document.getElementById("bloqueApiKey");
+  var bloqueEscaneo  = document.getElementById("bloqueEscaneo");
+  var inputApiKey    = document.getElementById("inputApiKeyGoogle");
+  var btnGuardarKey  = document.getElementById("btnGuardarApiKey");
+  var btnCambiarKey  = document.getElementById("btnCambiarApiKey");
+  var inputFoto      = document.getElementById("inputFotoTicket");
+  var btnHacerFoto   = document.getElementById("btnHacerFoto");
+  var btnAnalizar    = document.getElementById("btnAnalizarFoto");
+  var btnDescartar   = document.getElementById("btnDescartarFoto");
+  var previsualizacion = document.getElementById("previsualizacion");
+  var fotoPrevia     = document.getElementById("fotoPrevia");
+  var estado         = document.getElementById("estadoEscaneo");
+
+  var imagenBase64 = null;
+
+  /* --- Mostrar / ocultar área de cámara --- */
+  btnToggle.addEventListener("click", function () {
+    var visible = areaCamara.style.display !== "none";
+    if (visible) {
+      areaCamara.style.display = "none";
+      btnToggle.textContent = "Abrir cámara";
+      resetearCamara();
+    } else {
+      areaCamara.style.display = "block";
+      btnToggle.textContent = "Cerrar cámara";
+      mostrarPanelSegunClave();
+    }
+  });
+
+  /* --- Decide qué panel mostrar según si hay clave guardada --- */
+  function mostrarPanelSegunClave() {
+    var clave = obtenerApiKeyGoogle();
+    if (clave) {
+      bloqueApiKey.style.display = "none";
+      bloqueEscaneo.style.display = "block";
+      estado.textContent = "Clave API cargada. ¡Listo para escanear!";
+    } else {
+      bloqueApiKey.style.display = "block";
+      bloqueEscaneo.style.display = "none";
+      estado.textContent = "";
+    }
+  }
+
+  /* --- Guardar clave API --- */
+  btnGuardarKey.addEventListener("click", function () {
+    var clave = inputApiKey.value.trim();
+    if (!clave || !clave.startsWith("AIza")) {
+      mostrarToast("La clave debe empezar por AIza...", "error");
+      return;
+    }
+    guardarApiKeyGoogle(clave);
+    inputApiKey.value = "";
+    mostrarToast("Clave guardada correctamente", "success");
+    mostrarPanelSegunClave();
+  });
+
+  /* --- Cambiar clave API --- */
+  btnCambiarKey.addEventListener("click", function () {
+    localStorage.removeItem(GOOGLE_VISION_KEY_STORAGE);
+    resetearCamara();
+    mostrarPanelSegunClave();
+  });
+
+  /* --- Abrir cámara al pulsar el botón --- */
+  btnHacerFoto.addEventListener("click", function () {
+    inputFoto.click();
+  });
+
+  /* --- Previsualizar la foto tomada --- */
+  inputFoto.addEventListener("change", function () {
+    var archivo = inputFoto.files[0];
+    if (!archivo) return;
+
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      imagenBase64 = e.target.result;
+      fotoPrevia.src = imagenBase64;
+      previsualizacion.style.display = "block";
+      btnAnalizar.style.display = "inline-block";
+      btnDescartar.style.display = "inline-block";
+      btnHacerFoto.style.display = "none";
+      estado.textContent = "Foto lista. Pulsa 'Extraer datos' cuando estés listo.";
+    };
+    reader.readAsDataURL(archivo);
+    inputFoto.value = "";
+  });
+
+  /* --- Descartar foto --- */
+  btnDescartar.addEventListener("click", resetearCamara);
+
+  /* --- Extraer datos con Google Vision --- */
+  btnAnalizar.addEventListener("click", function () {
+    if (!imagenBase64) return;
+
+    var apiKey = obtenerApiKeyGoogle();
+    if (!apiKey) {
+      mostrarToast("No hay clave API guardada.", "error");
+      mostrarPanelSegunClave();
+      return;
+    }
+
+    btnAnalizar.disabled = true;
+    btnDescartar.disabled = true;
+    estado.textContent = "⏳ Enviando foto a Google Vision...";
+
+    leerTicketConGoogleVision(imagenBase64, apiKey)
+      .then(function (textoOCR) {
+        console.log("=== TEXTO OCR (Google Vision) ===\n" + textoOCR);
+        estado.textContent = "✅ Texto extraído. Detectando campos...";
+
+        var datos = extraerCamposTUSSAM(textoOCR);
+        rellenarFormularioConOCR(datos);
+
+        areaCamara.style.display = "none";
+        btnToggle.textContent = "Abrir cámara";
+        resetearCamara();
+      })
+      .catch(function (err) {
+        console.error("Error Vision:", err);
+        estado.textContent = "❌ Error: " + (err.message || "No se pudo leer el ticket.");
+        btnAnalizar.disabled = false;
+        btnDescartar.disabled = false;
+      });
+  });
+
+  /* --- Reset del área de cámara --- */
+  function resetearCamara() {
+    imagenBase64 = null;
+    fotoPrevia.src = "";
+    previsualizacion.style.display = "none";
+    btnAnalizar.style.display = "none";
+    btnDescartar.style.display = "none";
+    btnHacerFoto.style.display = "inline-block";
+    btnAnalizar.disabled = false;
+    btnDescartar.disabled = false;
+    estado.textContent = "";
+    inputFoto.value = "";
+  }
+}
+
+document.addEventListener("DOMContentLoaded", function () {
+  inicializarTema();
+  inicializarTabs();
+  inicializarTogglesFiltros();
+
+  abrirBaseDatos().then(function () {
+    inicializarRecaudaciones();
+    inicializarLiquidaciones();
+    inicializarImportarCorreo();
+    inicializarBackup();
+    inicializarEstadillo();
+    inicializarHistorial();
+    inicializarCamaraOCR();
+
+    return Promise.all([cargarRecaudaciones(), cargarLiquidaciones()]);
+  }).then(function () {
+    actualizarResumen();
+    comprobarBackupAutomatico();
+  });
+
+});
+
+  </script>
+</body>
+</html>
